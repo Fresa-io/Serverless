@@ -5,8 +5,11 @@ Update these values with your actual AWS resource names
 
 # Lambda Function Names (replace with your actual deployed function names)
 LAMBDA_FUNCTION_NAMES = {
-    "tracer_import_results": "tracer_import_results",  # Your actual function name
-    "tracer_sqs_consumer": "tracer_sqs_consumer",      # Your actual function name
+    "recieveEmail": "recieveEmail",                    # Fresa email processing function
+    "signUpCustomer": "signUpCustomer",                # Fresa customer signup function
+    "verifyCodeAndAuthHandler": "verifyCodeAndAuthHandler",  # Fresa verification function
+    "identity_provider_auth": "identity_provider_auth",      # Fresa auth provider function
+
 }
 
 # Lambda Alias Configuration (only STAGING and PROD - DEV is local-only)
@@ -37,32 +40,32 @@ AWS_CONFIG = {
 
 # Stack Configuration
 STACK_CONFIG = {
-    "stack_name": "TracerLambdaStack",
-    "description": "CDK Stack for Tracer Lambda Functions with Alias Management",
+    "stack_name": "FresaLambdaStack",
+    "description": "CDK Stack for Fresa Lambda Functions with Alias Management",
 }
 
 # GitHub Actions Configuration
 GITHUB_CONFIG = {
-    "repository": "t2modus/Serverless",  # Your actual repository
+    "repository": "Fresa/Serverless",  # Your actual repository
     "branch": "main",
     "environments": ["staging", "production"]
 }
 
 # Example SQS Queue Configuration (uncomment and update as needed)
 # SQS_CONFIG = {
-#     "processing_queue_name": "tracer-processing-queue",
+#     "processing_queue_name": "fresa-processing-queue",
 #     "visibility_timeout_seconds": 300,
 #     "retention_period_days": 14,
 # }
 
 # Example S3 Bucket Configuration (uncomment and update as needed)
 # S3_CONFIG = {
-#     "data_bucket_name": "tracer-data-bucket",
-#     "backup_bucket_name": "tracer-backup-bucket",
+#     "data_bucket_name": "fresa-data-bucket",
+#     "backup_bucket_name": "fresa-backup-bucket",
 # }
 
 # Example EventBridge Configuration (uncomment and update as needed)
 # EVENTBRIDGE_CONFIG = {
-#     "rule_name": "tracer-import-results-trigger",
+#     "rule_name": "fresa-email-trigger",
 #     "schedule_expression": "rate(5 minutes)",  # or "cron(0 12 * * ? *)"
 # } 

@@ -10,6 +10,7 @@ import json
 import sys
 import os
 from typing import Dict, List, Optional
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import LAMBDA_FUNCTION_NAMES, LAMBDA_ALIASES, DEPLOYMENT_ENV
 
 class LambdaAliasManager:
@@ -195,22 +196,101 @@ class LambdaAliasManager:
         
         return result
 
+    def rollback_to_previous_version(self, function_name: str, alias_name: str) -> bool:
+        """Rollback an alias to the previous version"""
+        try:
+            # Get all versions
+            versions = self.get_function_versions(function_name)
+            if len(versions) < 2:
+                print(f"❌ Function {function_name} has insufficient versions for rollback")
+                return False
+            
+            # Get current alias version
+            current_alias = self.get_alias_info(function_name, alias_name)
+            if not current_alias:
+                print(f"❌ Alias {alias_name} not found for {function_name}")
+                return False
+            
+            current_version = current_alias['FunctionVersion']
+            print(f"📋 Current {alias_name} points to version {current_version}")
+            
+            # Find previous version (skip $LATEST)
+            non_latest_versions = [v for v in versions if v['Version'] != '$LATEST']
+            non_latest_versions.sort(key=lambda x: int(x['Version']))
+            
+            if len(non_latest_versions) < 2:
+                print(f"❌ Not enough numbered versions for rollback")
+                return False
+            
+            # Find previous version
+            current_idx = None
+            for i, version in enumerate(non_latest_versions):
+                if version['Version'] == current_version:
+                    current_idx = i
+                    break
+            
+            if current_idx is None or current_idx == 0:
+                print(f"❌ Cannot determine previous version")
+                return False
+            
+            previous_version = non_latest_versions[current_idx - 1]['Version']
+            print(f"🔄 Rolling back {alias_name} from version {current_version} to {previous_version}")
+            
+            # Update alias to previous version
+            return self.create_alias(
+                function_name, 
+                alias_name, 
+                previous_version, 
+                f"Rollback from {current_version} to {previous_version}"
+            )
+            
+        except Exception as e:
+            print(f"❌ Error rolling back {function_name}:{alias_name}: {e}")
+            return False
+    
+    def set_alias_to_version(self, function_name: str, alias_name: str, target_version: str) -> bool:
+        """Set an alias to a specific version"""
+        try:
+            # Verify target version exists
+            versions = self.get_function_versions(function_name)
+            version_numbers = [v['Version'] for v in versions]
+            
+            if target_version not in version_numbers:
+                print(f"❌ Version {target_version} not found for {function_name}")
+                print(f"Available versions: {', '.join(version_numbers)}")
+                return False
+            
+            return self.create_alias(
+                function_name,
+                alias_name,
+                target_version,
+                f"Manually set to version {target_version}"
+            )
+            
+        except Exception as e:
+            print(f"❌ Error setting {function_name}:{alias_name} to version {target_version}: {e}")
+            return False
+
 def main():
     """Main function for command line usage"""
     if len(sys.argv) < 2:
         print("🚀 Lambda Alias Manager")
         print("")
         print("Usage:")
-        print("  python lambda_alias_manager.py setup [function_name] [version]")
-        print("  python lambda_alias_manager.py promote <function_name> <source_alias> <target_alias>")
-        print("  python lambda_alias_manager.py list")
-        print("  python lambda_alias_manager.py info <function_name> <alias_name>")
+        print("  python scripts/lambda_alias_manager.py setup [function_name] [version]")
+        print("  python scripts/lambda_alias_manager.py promote <function_name> <source_alias> <target_alias>")
+        print("  python scripts/lambda_alias_manager.py rollback <function_name> <environment>")
+        print("  python scripts/lambda_alias_manager.py set-version <function_name> <environment> <version>")
+        print("  python scripts/lambda_alias_manager.py list")
+        print("  python scripts/lambda_alias_manager.py info <function_name> <alias_name>")
         print("")
         print("Examples:")
-        print("  python lambda_alias_manager.py setup")
-        print("  python lambda_alias_manager.py setup tracer-import-results-function")
-        print("  python lambda_alias_manager.py promote tracer-import-results-function staging prod")
-        print("  python lambda_alias_manager.py list")
+        print("  python scripts/lambda_alias_manager.py setup")
+        print("  python scripts/lambda_alias_manager.py setup recieveEmail")
+        print("  python scripts/lambda_alias_manager.py promote recieveEmail staging prod")
+        print("  python scripts/lambda_alias_manager.py rollback userLogin prod")
+        print("  python scripts/lambda_alias_manager.py set-version userLogin prod 3")
+        print("  python scripts/lambda_alias_manager.py list")
         print("")
         print("📝 Note: DEV environment is local-only, no alias needed")
         return
@@ -252,6 +332,45 @@ def main():
         info = manager.get_alias_info(function_name, alias_name)
         if info:
             print(json.dumps(info, indent=2, default=str))
+    
+    elif command == "rollback":
+        if len(sys.argv) != 4:
+            print("❌ rollback command requires: function_name environment")
+            return
+        
+        function_name = sys.argv[2]
+        environment = sys.argv[3].upper()
+        
+        # Map environment to alias name
+        env_to_alias = {"STAGING": "staging", "PROD": "prod", "PRODUCTION": "prod"}
+        alias_name = env_to_alias.get(environment)
+        
+        if not alias_name:
+            print(f"❌ Invalid environment: {environment}")
+            print("Valid environments: STAGING, PROD")
+            return
+        
+        manager.rollback_to_previous_version(function_name, alias_name)
+    
+    elif command == "set-version":
+        if len(sys.argv) != 5:
+            print("❌ set-version command requires: function_name environment version")
+            return
+        
+        function_name = sys.argv[2]
+        environment = sys.argv[3].upper()
+        target_version = sys.argv[4]
+        
+        # Map environment to alias name
+        env_to_alias = {"STAGING": "staging", "PROD": "prod", "PRODUCTION": "prod"}
+        alias_name = env_to_alias.get(environment)
+        
+        if not alias_name:
+            print(f"❌ Invalid environment: {environment}")
+            print("Valid environments: STAGING, PROD")
+            return
+        
+        manager.set_alias_to_version(function_name, alias_name, target_version)
     
     else:
         print(f"❌ Unknown command: {command}")

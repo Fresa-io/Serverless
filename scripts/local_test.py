@@ -11,6 +11,7 @@ import importlib.util
 import tempfile
 from pathlib import Path
 from typing import Dict, Any, Optional, List
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import LAMBDA_FUNCTION_NAMES
 
 class LocalLambdaTester:
@@ -125,7 +126,7 @@ class LocalLambdaTester:
         
         if not event_data:
             # Default test event based on function type
-            if function_key == "tracer_sqs_consumer":
+            if function_key == "recieveEmail":
                 event_data = {
                     "Records": [
                         {
@@ -343,20 +344,20 @@ def main():
         print("🧪 Local Lambda Tester")
         print("")
         print("Usage:")
-        print("  python local_test.py test <function_key> [event_file]")
-        print("  python local_test.py test-unit <function_key>")
-        print("  python local_test.py create-event <function_key>")
-        print("  python local_test.py list-events [function_key]")
+        print("  python scripts/local_test.py test <function_key> [event_file]")
+        print("  python scripts/local_test.py test-unit <function_key>")
+        print("  python scripts/local_test.py create-event <function_key>")
+        print("  python scripts/local_test.py list-events [function_key]")
         print("")
         print("Function Keys:", ", ".join(LAMBDA_FUNCTION_NAMES.keys()))
         print("")
         print("Examples:")
-        print("  python local_test.py test tracer_import_results")
-        print("  python local_test.py test tracer_import_results tracer_import_results/test_events/custom_event.json")
-        print("  python local_test.py test-unit tracer_import_results")
-        print("  python local_test.py create-event tracer_import_results")
-        print("  python local_test.py list-events")
-        print("  python local_test.py list-events tracer_import_results")
+        print("  python scripts/local_test.py test recieveEmail")
+        print("  python scripts/local_test.py test recieveEmail recieveEmail/test_events/custom_event.json")
+        print("  python scripts/local_test.py test-unit recieveEmail")
+        print("  python scripts/local_test.py create-event recieveEmail")
+        print("  python scripts/local_test.py list-events")
+        print("  python scripts/local_test.py list-events recieveEmail")
         return
     
     command = sys.argv[1]

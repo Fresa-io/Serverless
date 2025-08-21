@@ -7,6 +7,7 @@ Usage: python add_lambda_function.py <function_name>
 import sys
 import os
 import re
+import json
 from pathlib import Path
 
 def update_config_py(function_name):
@@ -38,20 +39,26 @@ def update_config_py(function_name):
         else:
             print(f"⚠️  Function {function_name} already exists in {config_file}")
 
-def update_github_workflow(function_name):
+def update_github_workflow(function_name, category="General"):
     """Update GitHub Actions workflow with new function"""
     workflow_file = ".github/workflows/deploy.yml"
+    
+    # Check if workflow file exists
+    if not os.path.exists(workflow_file):
+        print(f"⚠️  GitHub workflow file not found: {workflow_file}")
+        print("   Skipping GitHub workflow update")
+        return
     
     with open(workflow_file, 'r') as f:
         content = f.read()
     
     # Update unit tests section
-    test_pattern = r'(# Run tests for [^\n]+\n\s+cd Lambdas/Expansion/[^\n]+\n\s+python -m pytest tests/ -v[^\n]*\n\s+cd \.\./\.\./\.\.\n\s+)'
+    test_pattern = r'(# Run tests for [^\n]+\n\s+cd Lambdas/[^/]+/[^\n]+\n\s+python -m pytest tests/ -v[^\n]*\n\s+cd \.\./\.\./\.\.\n\s+)'
     test_match = re.search(test_pattern, content, re.DOTALL)
     
     if test_match:
         new_test = f"""          # Run tests for {function_name}
-          cd Lambdas/Expansion/{function_name}
+          cd Lambdas/{category}/{function_name}
           python -m pytest tests/ -v || echo "No tests found for {function_name}"
           cd ../../..
 
@@ -65,7 +72,7 @@ def update_github_workflow(function_name):
         local_test_match = re.search(local_test_pattern, updated_content)
         
         if local_test_match:
-            new_local_test = f"          python local_test.py test {function_name}\n"
+            new_local_test = f"          python scripts/local_test.py test {function_name}\n"
             updated_content = updated_content.replace(local_test_match.group(1),
                                                     local_test_match.group(1) + new_local_test)
         
@@ -122,9 +129,9 @@ def update_entrypoint_script(function_name):
             f.write(updated_content)
         print(f"✅ Updated {entrypoint_file}")
 
-def create_function_structure(function_name):
+def create_function_structure(function_name, category="General"):
     """Create the basic function directory structure"""
-    base_dir = f"Lambdas/Expansion/{function_name}"
+    base_dir = f"Lambdas/{category}/{function_name}"
     
     # Create directories
     os.makedirs(f"{base_dir}/tests", exist_ok=True)
@@ -258,22 +265,25 @@ if __name__ == '__main__':
 
 def main():
     """Main function"""
-    if len(sys.argv) != 2:
-        print("Usage: python add_lambda_function.py <function_name>")
-        print("Example: python add_lambda_function.py my_new_function")
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print("Usage: python scripts/add_lambda_function.py <function_name> [category]")
+        print("Example: python scripts/add_lambda_function.py my_new_function Authentication")
+        print("Available categories: Authentication, General, Processing, etc.")
         sys.exit(1)
     
     function_name = sys.argv[1]
+    category = sys.argv[2] if len(sys.argv) == 3 else "General"
     
     print(f"🚀 Adding new Lambda function: {function_name}")
+    print(f"📁 Category: {category}")
     print("=" * 50)
     
     # Create function structure
-    create_function_structure(function_name)
+    create_function_structure(function_name, category)
     
     # Update configuration files
     update_config_py(function_name)
-    update_github_workflow(function_name)
+    update_github_workflow(function_name, category)
     update_entrypoint_script(function_name)
     
     print("=" * 50)
@@ -281,7 +291,7 @@ def main():
     print("")
     print("📋 Next steps:")
     print(f"1. Edit {function_name}.py to add your function logic")
-    print(f"2. Add tests to tests/test_{function_name}.py")
+    print(f"2. Add tests to Lambdas/{category}/{function_name}/tests/test_{function_name}.py")
     print(f"3. Create test events in test_events/")
     print("4. Test locally: docker run --rm -it app deploy <your-aws-key>")
     print("5. Push to GitHub to trigger CI/CD")

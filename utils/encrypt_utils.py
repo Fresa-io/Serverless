@@ -23,8 +23,8 @@ def decode_hash(hashed_string: str) -> tuple:
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage:")
-        print("  python3 encrypt_utils.py hash <access_key> <secret_key> <region>")
-        print("  python3 encrypt_utils.py decrypt <encrypted_string>")
+        print("  python3 utils/encrypt_utils.py hash <access_key> <secret_key> <region>")
+        print("  python3 utils/encrypt_utils.py decrypt <encrypted_string>")
         sys.exit(1)
     
     command = sys.argv[1]

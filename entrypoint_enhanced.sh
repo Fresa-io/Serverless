@@ -31,7 +31,7 @@ show_usage() {
     echo "  docker run --rm -it app shell <encrypted_credentials>"
     echo ""
     echo "Environments: STAGING, PROD"
-    echo "Functions: tracer_import_results, tracer_sqs_consumer"
+         echo "Functions: $(python3 utils/function_discovery.py list | tr '\n' ', ' | sed 's/,$//')"
     echo ""
     echo "💻 Note: DEV environment is local-only, no deployment needed"
     echo "🔐 Security: Credentials are encrypted using base64 encoding for sharing"
@@ -42,7 +42,7 @@ setup_aws_credentials() {
     local encrypted_creds="$1"
     
     echo "🔓 Decrypting credentials..."
-    DECRYPTED_OUTPUT=$(python3 encrypt_utils.py decrypt "$encrypted_creds" 2>&1)
+    DECRYPTED_OUTPUT=$(python3 utils/encrypt_utils.py decrypt "$encrypted_creds" 2>&1)
     
     if echo "$DECRYPTED_OUTPUT" | grep -q "Error:"; then
         echo "❌ $DECRYPTED_OUTPUT"
@@ -98,18 +98,14 @@ show_interactive_menu() {
     echo ""
     echo "Available Actions:"
     echo "  1) 🔍 Show Deployment Status"
-    echo "  2) 🏷️  Setup Aliases"
-    echo "  3) 🧪 Test Function Locally"
-    echo "  4) 🧪 Run Unit Tests"
-    echo "  5) 📋 List Test Events"
-    echo "  6) 🚀 Deploy to STAGING"
-    echo "  7) 🚀 Deploy to PROD"
-    echo "  8) 🔄 Promote STAGING → PROD"
-    echo "  9) 🆕 Create New Lambda Function"
-    echo "  10) 💻 Interactive Shell"
-    echo "  11) ❌ Exit"
+    echo "  2) 🧪 Test Function Locally"
+    echo "  3) 🧪 Run Unit Tests"
+    echo "  4) 📋 List Test Events"
+    echo "  5) 🆕 Create New Lambda Function"
+    echo "  6) 💻 Interactive Shell"
+    echo "  7) ❌ Exit"
     echo ""
-    echo "🛡️  Safety: Functions are never deleted, only updated with new versions"
+    echo "🚀 Deployment: All deployments happen via GitHub Actions CI/CD"
     echo "📋 Note: Use 'menu' command in shell to return to this menu"
     echo ""
 }
@@ -119,21 +115,15 @@ show_function_menu() {
     echo ""
     echo "📋 Available Functions:"
     
-    # Dynamically list all functions from config.py
-    functions=()
-    if [ -f "config.py" ]; then
-        # Extract function names from config.py
-        while IFS= read -r line; do
-            if [[ $line =~ \"([^\"]+)\": ]]; then
-                functions+=("${BASH_REMATCH[1]}")
-            fi
-        done < <(grep -E '"[^"]+":' config.py | grep -v '#' | head -10)
-    fi
-    
-    # If no functions found, use defaults
-    if [ ${#functions[@]} -eq 0 ]; then
-        functions=("tracer_import_results" "tracer_sqs_consumer")
-    fi
+         # Dynamically discover functions
+     mapfile -t functions < <(python3 utils/function_discovery.py list)
+     
+     # If no functions found, show message
+     if [ ${#functions[@]} -eq 0 ]; then
+         echo "  No Lambda functions found"
+         echo "  Use option 10 to add a new function"
+         return
+     fi
     
     # Display functions
     for i in "${!functions[@]}"; do
@@ -149,20 +139,14 @@ show_function_menu() {
 get_function_selection() {
     show_function_menu
     
-    # Get functions array
-    functions=()
-    if [ -f "config.py" ]; then
-        while IFS= read -r line; do
-            if [[ $line =~ \"([^\"]+)\": ]]; then
-                functions+=("${BASH_REMATCH[1]}")
-            fi
-        done < <(grep -E '"[^"]+":' config.py | grep -v '#' | head -10)
-    fi
-    
-    # If no functions found, use defaults
-    if [ ${#functions[@]} -eq 0 ]; then
-        functions=("tracer_import_results" "tracer_sqs_consumer")
-    fi
+         # Get functions array using dynamic discovery
+     mapfile -t functions < <(python3 utils/function_discovery.py list)
+     
+     # If no functions found, return
+     if [ ${#functions[@]} -eq 0 ]; then
+         echo "back"
+         return
+     fi
     
     max_choice=$(( ${#functions[@]} + 2 ))
     echo "Select function (1-$max_choice): "
@@ -197,22 +181,15 @@ handle_interactive_menu() {
     
     while true; do
         show_interactive_menu "$encrypted_creds"
-        echo "Enter your choice (1-11): "
+        echo "Enter your choice (1-7): "
         read -r choice
         
         case $choice in
             1)  # Show Deployment Status
                 echo "📊 Showing deployment status..."
-                python3 deploy_with_aliases.py status
+                python3 scripts/deploy_with_aliases.py status
                 ;;
-            2)  # Setup Aliases
-                echo "🏷️  Setting up aliases for all functions..."
-                python3 lambda_alias_manager.py setup
-                echo ""
-                echo "📊 Alias Status:"
-                python3 lambda_alias_manager.py list
-                ;;
-            3)  # Test Function Locally
+            2)  # Test Function Locally
                 while true; do
                     function=$(get_function_selection)
                     if [ "$function" = "back" ]; then
@@ -224,23 +201,20 @@ handle_interactive_menu() {
                     
                     if [ "$function" = "all" ]; then
                         echo "🧪 Testing all functions locally..."
-                        # Get all functions from config.py
-                        while IFS= read -r line; do
-                            if [[ $line =~ \"([^\"]+)\": ]]; then
-                                func_name="${BASH_REMATCH[1]}"
-                                echo "🧪 Testing $func_name..."
-                                python3 local_test.py test "$func_name"
-                                echo ""
-                            fi
-                        done < <(grep -E '"[^"]+":' config.py | grep -v '#')
+                                                 # Get all functions dynamically
+                         while IFS= read -r func_name; do
+                             echo "🧪 Testing $func_name..."
+                             python3 scripts/local_test.py test "$func_name"
+                             echo ""
+                         done < <(python3 utils/function_discovery.py list)
                     else
                         echo "🧪 Testing $function locally..."
-                        python3 local_test.py test "$function"
+                        python3 scripts/local_test.py test "$function"
                     fi
                     break
                 done
                 ;;
-            4)  # Run Unit Tests
+            3)  # Run Unit Tests
                 while true; do
                     function=$(get_function_selection)
                     if [ "$function" = "back" ]; then
@@ -252,23 +226,20 @@ handle_interactive_menu() {
                     
                     if [ "$function" = "all" ]; then
                         echo "🧪 Running unit tests for all functions..."
-                        # Get all functions from config.py
-                        while IFS= read -r line; do
-                            if [[ $line =~ \"([^\"]+)\": ]]; then
-                                func_name="${BASH_REMATCH[1]}"
-                                echo "🧪 Running unit tests for $func_name..."
-                                python3 local_test.py test-unit "$func_name"
-                                echo ""
-                            fi
-                        done < <(grep -E '"[^"]+":' config.py | grep -v '#')
+                                                 # Get all functions dynamically
+                         while IFS= read -r func_name; do
+                             echo "🧪 Running unit tests for $func_name..."
+                             python3 scripts/local_test.py test-unit "$func_name"
+                             echo ""
+                         done < <(python3 utils/function_discovery.py list)
                     else
                         echo "🧪 Running unit tests for $function..."
-                        python3 local_test.py test-unit "$function"
+                        python3 scripts/local_test.py test-unit "$function"
                     fi
                     break
                 done
                 ;;
-            5)  # List Test Events
+            4)  # List Test Events
                 while true; do
                     function=$(get_function_selection)
                     if [ "$function" = "back" ]; then
@@ -280,91 +251,15 @@ handle_interactive_menu() {
                     
                     if [ "$function" = "all" ]; then
                         echo "📋 Listing all test events..."
-                        python3 local_test.py list-events
+                        python3 scripts/local_test.py list-events
                     else
                         echo "📋 Listing test events for $function..."
-                        python3 local_test.py list-events "$function"
+                        python3 scripts/local_test.py list-events "$function"
                     fi
                     break
                 done
                 ;;
-            6)  # Deploy to STAGING
-                while true; do
-                    function=$(get_function_selection)
-                    if [ "$function" = "back" ]; then
-                        break
-                    elif [ "$function" = "invalid" ]; then
-                        echo "❌ Invalid selection"
-                        continue
-                    fi
-                    
-                    if [ "$function" = "all" ]; then
-                        echo "🚀 Deploying all functions to STAGING..."
-                        python3 deploy_with_aliases.py deploy-all STAGING
-                    else
-                        echo "🚀 Deploying $function to STAGING..."
-                        python3 deploy_with_aliases.py deploy "$function" STAGING
-                    fi
-                    echo ""
-                    echo "📊 Deployment Status:"
-                    python3 deploy_with_aliases.py status
-                    break
-                done
-                ;;
-            7)  # Deploy to PROD
-                while true; do
-                    function=$(get_function_selection)
-                    if [ "$function" = "back" ]; then
-                        break
-                    elif [ "$function" = "invalid" ]; then
-                        echo "❌ Invalid selection"
-                        continue
-                    fi
-                    
-                    if [ "$function" = "all" ]; then
-                        echo "🚀 Deploying all functions to PROD..."
-                        python3 deploy_with_aliases.py deploy-all PROD
-                    else
-                        echo "🚀 Deploying $function to PROD..."
-                        python3 deploy_with_aliases.py deploy "$function" PROD
-                    fi
-                    echo ""
-                    echo "📊 Deployment Status:"
-                    python3 deploy_with_aliases.py status
-                    break
-                done
-                ;;
-            8)  # Promote STAGING → PROD
-                while true; do
-                    function=$(get_function_selection)
-                    if [ "$function" = "back" ]; then
-                        break
-                    elif [ "$function" = "invalid" ]; then
-                        echo "❌ Invalid selection"
-                        continue
-                    fi
-                    
-                    if [ "$function" = "all" ]; then
-                        echo "🔄 Promoting all functions from STAGING to PROD..."
-                        # Get all functions from config.py and promote them
-                        while IFS= read -r line; do
-                            if [[ $line =~ \"([^\"]+)\": ]]; then
-                                func_name="${BASH_REMATCH[1]}"
-                                echo "🔄 Promoting $func_name from STAGING to PROD..."
-                                python3 deploy_with_aliases.py promote "$func_name" STAGING PROD
-                            fi
-                        done < <(grep -E '"[^"]+":' config.py | grep -v '#')
-                    else
-                        echo "🔄 Promoting $function from STAGING to PROD..."
-                        python3 deploy_with_aliases.py promote "$function" STAGING PROD
-                    fi
-                    echo ""
-                    echo "📊 Updated Status:"
-                    python3 deploy_with_aliases.py status
-                    break
-                done
-                ;;
-            9)  # Create New Lambda Function
+            5)  # Create New Lambda Function
                 echo ""
                 echo "🆕 Create New Lambda Function"
                 echo "============================="
@@ -376,10 +271,9 @@ handle_interactive_menu() {
                 echo "✅ Updated configuration files"
                 echo "✅ Updated GitHub Actions workflow"
                 echo "✅ Updated interactive menu"
-                echo ""
                 echo "📋 Function naming rules:"
-                echo "• Use lowercase letters and underscores"
-                echo "• Example: my_new_function, data_processor, api_handler"
+                echo "• Use camelCase or snake_case: myFunction or my_function"
+                echo "• Examples: userLogin, processPayment, sendEmail"
                 echo ""
                 echo "Enter function name (or 'back' to cancel): "
                 read -r function_name
@@ -388,25 +282,57 @@ handle_interactive_menu() {
                     echo "❌ Cancelled function creation"
                 elif [ -z "$function_name" ]; then
                     echo "❌ Function name cannot be empty"
-                elif [[ ! "$function_name" =~ ^[a-z_]+$ ]]; then
-                    echo "❌ Function name must contain only lowercase letters and underscores"
+                elif [[ ! "$function_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+                    echo "❌ Function name must be a valid identifier (letters, numbers, underscores)"
                 else
                     echo ""
+                    echo "📁 Select function category:"
+                    echo "  1) Authentication (login, signup, auth)"
+                    echo "  2) Processing (data processing, file handling)"
+                    echo "  3) Communication (email, SMS, notifications)"
+                    echo "  4) Analytics (reporting, data analysis)"
+                    echo "  5) General (default category)"
+                    echo "  6) Custom (enter your own category)"
+                    echo ""
+                    echo "Enter category choice (1-6): "
+                    read -r category_choice
+                    
+                    case $category_choice in
+                        1) category="Authentication" ;;
+                        2) category="Processing" ;;
+                        3) category="Communication" ;;
+                        4) category="Analytics" ;;
+                        5) category="General" ;;
+                        6) 
+                            echo "Enter custom category name: "
+                            read -r category
+                            if [ -z "$category" ]; then
+                                category="General"
+                            fi
+                            ;;
+                        *) 
+                            echo "❌ Invalid choice. Using 'General' category."
+                            category="General"
+                            ;;
+                    esac
+                    
+                    echo ""
                     echo "🚀 Creating new Lambda function: $function_name"
+                    echo "📁 Category: $category"
                     echo "================================================"
                     
-                    # Check if function already exists
-                    if [ -d "Lambdas/Expansion/$function_name" ]; then
+                    # Check if function already exists in any category
+                    if find Lambdas/ -type d -name "$function_name" | grep -q .; then
                         echo "❌ Function '$function_name' already exists!"
                         echo "Please choose a different name."
                     else
-                        # Run the add_lambda_function.py script
-                        if python3 add_lambda_function.py "$function_name"; then
+                        # Run the add_lambda_function.py script with category
+                        if python3 scripts/add_lambda_function.py "$function_name" "$category"; then
                             echo ""
                             echo "🎉 Successfully created Lambda function: $function_name"
                             echo ""
                             echo "📋 Next steps:"
-                            echo "1. Edit the function code: Lambdas/Expansion/$function_name/$function_name.py"
+                            echo "1. Edit the function code: Lambdas/$category/$function_name/$function_name.py"
                             echo "2. Add your business logic"
                             echo "3. Test locally: Select option 3 from main menu"
                             echo "4. Deploy to staging: Select option 6 from main menu"
@@ -419,15 +345,15 @@ handle_interactive_menu() {
                     fi
                 fi
                 ;;
-            10) # Interactive Shell
+            6) # Interactive Shell
                 echo ""
                 echo "🚀 Starting interactive shell with AWS credentials configured..."
                 echo "💡 Available commands:"
-                echo "   python3 deploy_with_aliases.py status"
-                echo "   python3 lambda_alias_manager.py list"
-                echo "   python3 local_test.py test <function>"
-                echo "   python3 local_test.py test-unit <function>"
-                echo "   python3 local_test.py list-events [function]"
+                echo "   python3 scripts/deploy_with_aliases.py status"
+                echo "   python3 scripts/local_test.py test <function>"
+                echo "   python3 scripts/local_test.py test-unit <function>"
+                echo "   python3 scripts/local_test.py list-events [function]"
+                echo "   python3 scripts/add_lambda_function.py <function> <category>"
                 echo "   aws lambda list-functions"
                 echo "   aws sts get-caller-identity"
                 echo ""
@@ -442,11 +368,11 @@ handle_interactive_menu() {
                 bash --rcfile <(echo "
                     # Custom bash profile for Lambda deployment
                     alias menu='echo \"Returning to menu...\"; exit'
-                    alias status='python3 deploy_with_aliases.py status'
-                    alias list='python3 lambda_alias_manager.py list'
-                    alias test='python3 local_test.py test'
-                    alias test-unit='python3 local_test.py test-unit'
-                    alias list-events='python3 local_test.py list-events'
+                    alias status='python3 scripts/deploy_with_aliases.py status'
+                    alias ls-functions='python3 utils/function_discovery.py list'
+                    alias test='python3 scripts/local_test.py test'
+                    alias test-unit='python3 scripts/local_test.py test-unit'
+                    alias list-events='python3 scripts/local_test.py list-events'
                     
                     echo '🔄 Type \"menu\" to return to the interactive menu'
                     echo '💡 Type \"help\" to see available aliases'
@@ -462,12 +388,12 @@ handle_interactive_menu() {
                     }
                 ")
                 ;;
-            11) # Exit
+            7) # Exit
                 echo "👋 Goodbye!"
                 exit 0
                 ;;
             *)  # Invalid choice
-                echo "❌ Invalid choice. Please select 1-11."
+                echo "❌ Invalid choice. Please select 1-7."
                 ;;
         esac
         
@@ -509,7 +435,7 @@ case "$1" in
         REGION="$4"
         
         echo "🔐 Creating encrypted credentials hash..."
-        ENCRYPTED=$(python3 encrypt_utils.py hash "$ACCESS_KEY" "$SECRET_KEY" "$REGION" | grep "Hash:" | cut -d' ' -f2)
+        ENCRYPTED=$(python3 utils/encrypt_utils.py hash "$ACCESS_KEY" "$SECRET_KEY" "$REGION" | grep "Hash:" | cut -d' ' -f2)
         echo "✅ Encrypted credentials hash:"
         echo "$ENCRYPTED"
         echo ""
@@ -531,11 +457,11 @@ case "$1" in
         fi
         
         echo "🏷️  Setting up aliases for all functions..."
-        python3 lambda_alias_manager.py setup
+        python3 scripts/lambda_alias_manager.py setup
         
         echo ""
         echo "📊 Alias Status:"
-        python3 lambda_alias_manager.py list
+        python3 scripts/lambda_alias_manager.py list
         ;;
         
     "promote")
@@ -555,11 +481,11 @@ case "$1" in
         fi
         
         echo "🔄 Promoting $FUNCTION from $SOURCE_ENV to $TARGET_ENV..."
-        python3 deploy_with_aliases.py promote "$FUNCTION" "$SOURCE_ENV" "$TARGET_ENV"
+        python3 scripts/deploy_with_aliases.py promote "$FUNCTION" "$SOURCE_ENV" "$TARGET_ENV"
         
         echo ""
         echo "📊 Updated Status:"
-        python3 deploy_with_aliases.py status
+        python3 scripts/deploy_with_aliases.py status
         ;;
         
     "status")
@@ -577,7 +503,7 @@ case "$1" in
         
         echo "📊 Deployment Status Report"
         echo "=" * 50
-        python3 deploy_with_aliases.py status
+        python3 scripts/deploy_with_aliases.py status
         ;;
         
     "test-local")
@@ -590,7 +516,7 @@ case "$1" in
         FUNCTION="$2"
         
         echo "🧪 Testing function locally: $FUNCTION"
-        python3 local_test.py test "$FUNCTION"
+        python3 scripts/local_test.py test "$FUNCTION"
         ;;
         
     "test-unit")
@@ -603,7 +529,7 @@ case "$1" in
         FUNCTION="$2"
         
         echo "🧪 Running unit tests for: $FUNCTION"
-        python3 local_test.py test-unit "$FUNCTION"
+        python3 scripts/local_test.py test-unit "$FUNCTION"
         ;;
         
     "list-events")
@@ -611,10 +537,10 @@ case "$1" in
         
         if [ -n "$FUNCTION" ]; then
             echo "📋 Test events for $FUNCTION:"
-            python3 local_test.py list-events "$FUNCTION"
+            python3 scripts/local_test.py list-events "$FUNCTION"
         else
             echo "📋 All test events:"
-            python3 local_test.py list-events
+            python3 scripts/local_test.py list-events
         fi
         ;;
         
@@ -634,11 +560,11 @@ case "$1" in
         echo ""
         echo "🚀 Starting interactive shell with AWS credentials configured..."
         echo "💡 Available commands:"
-        echo "   python3 deploy_with_aliases.py status"
-        echo "   python3 lambda_alias_manager.py list"
-        echo "   python3 local_test.py test <function>"
-        echo "   python3 local_test.py test-unit <function>"
-        echo "   python3 local_test.py list-events [function]"
+        echo "   python3 scripts/deploy_with_aliases.py status"
+        echo "   python3 scripts/lambda_alias_manager.py list"
+        echo "   python3 scripts/local_test.py test <function>"
+        echo "   python3 scripts/local_test.py test-unit <function>"
+        echo "   python3 scripts/local_test.py list-events [function]"
         echo "   aws lambda list-functions"
         echo "   aws sts get-caller-identity"
         echo ""

@@ -14,8 +14,9 @@ import tempfile
 import shutil
 from typing import Dict, List, Optional
 from pathlib import Path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import LAMBDA_FUNCTION_NAMES, LAMBDA_ALIASES, DEPLOYMENT_ENV
-from lambda_alias_manager import LambdaAliasManager
+from scripts.lambda_alias_manager import LambdaAliasManager
 
 class LambdaDeployer:
     def __init__(self, region: str = None):
@@ -257,10 +258,10 @@ def main():
         print("🚀 Lambda Deployer with Alias Management")
         print("")
         print("Usage:")
-        print("  python deploy_with_aliases.py deploy <function_key> <environment>")
-        print("  python deploy_with_aliases.py deploy-all <environment>")
-        print("  python deploy_with_aliases.py promote <function_key> <source_env> <target_env>")
-        print("  python deploy_with_aliases.py status")
+        print("  python scripts/deploy_with_aliases.py deploy <function_key> <environment>")
+        print("  python scripts/deploy_with_aliases.py deploy-all <environment>")
+        print("  python scripts/deploy_with_aliases.py promote <function_key> <source_env> <target_env>")
+        print("  python scripts/deploy_with_aliases.py status")
         print("")
         print("Environments: STAGING, PROD")
         print("Function Keys:", ", ".join(LAMBDA_FUNCTION_NAMES.keys()))
@@ -268,10 +269,10 @@ def main():
         print("💻 Note: DEV environment is local-only, no deployment needed")
         print("")
         print("Examples:")
-        print("  python deploy_with_aliases.py deploy tracer_import_results STAGING")
-        print("  python deploy_with_aliases.py deploy-all STAGING")
-        print("  python deploy_with_aliases.py promote tracer_import_results STAGING PROD")
-        print("  python deploy_with_aliases.py status")
+        print("  python scripts/deploy_with_aliases.py deploy recieveEmail STAGING")
+        print("  python scripts/deploy_with_aliases.py deploy-all STAGING")
+        print("  python scripts/deploy_with_aliases.py promote recieveEmail STAGING PROD")
+        print("  python scripts/deploy_with_aliases.py status")
         return
     
     command = sys.argv[1]

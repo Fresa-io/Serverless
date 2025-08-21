@@ -1,243 +1,306 @@
-# Source Control for Cloud Infrastructure ☁️
+# 🚀 Lambda Deployment System
 
-This repository provides source control for our AWS cloud infrastructure (serverless code)
+A comprehensive Lambda deployment system with alias management, local testing, and interactive deployment workflows.
 
----
+## 🎯 The Magic: One Command Does Everything
 
-## 🚀 Quick Start (For Developers)
-
-### Prerequisites
-
-- Docker installed on your system (Windows, macOS, or Linux)
-- **Ask your admin for the encrypted credentials hash**
-
-### One-Command Deployment
+**Just run this one command for everything:**
 
 ```bash
-docker run --rm app deploy <encrypted_credentials_hash>
+docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
 ```
 
-**Example:**
+This single command handles:
+
+- ✅ Local testing
+- ✅ Unit tests
+- ✅ Deployment to STAGING
+- ✅ Deployment to PROD
+- ✅ Status checks
+- ✅ Everything else
+
+## 🎯 Your Deployment Flow
+
+```
+1. 🧪 Local Testing (DEV) → 2. 📋 Code Review → 3. 🚀 STAGING → 4. ✅ Approval → 5. 🚀 PROD
+```
+
+## 📋 Quick Setup (2 Steps)
+
+### Step 1: Build the Docker Image (One Time Setup)
 
 ```bash
-docker run --rm app deploy QUtJQVRZRENYVFVWTEZTQTZITUs6T2luVnVFem9CelpTeFF6RHJuOUt2WXl0UnBvTGp6Z09iWVBhQTJLbkM6dXMtZWFzdC0x
+docker build -t app .
 ```
 
-### 🔑 Getting the Encrypted Credentials Hash
+### Step 2: That's It! You're Ready
 
-**Ask your admin/team lead for the encrypted credentials hash.** They will provide you with a long string that looks like this:
+Everything else is handled by the single command. The system will:
 
+- ✅ Check AWS credentials automatically
+- ✅ Setup aliases if needed
+- ✅ Guide you through all options
+- ✅ Handle all deployments
+
+**Just run this one command for everything:**
+
+```bash
+docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
 ```
-QUtJQVRZRENYVFVWTEZTQTZITUs6T2luVnVFem9CelpTeFF6RHJuOUt2WXl0UnBvTGp6Z09iWVBhQTJLbkM6dXMtZWFzdC0x
-```
 
-**You do NOT need to create this yourself** - only admins should generate encrypted credentials.
-
----
-
-## 🔐 Security Features
-
-- **Credential Encryption**: Credentials are base64 encoded for safe sharing
-- **No Local Storage**: Credentials are never stored on disk
-- **Container Isolation**: All operations happen in isolated Docker container
-- **Cross-Platform**: Works on Windows, macOS, and Linux
-
-## 🛠️ What the Container Does
-
-1. **Sets up AWS CLI** with your credentials
-2. **Installs Python dependencies** (CDK, etc.)
-3. **Configures CDK** environment
-4. **Bootstraps CDK** (if needed)
-5. **Deploys your stack** with proper permissions
-6. **Outputs results** and stack information
-
-## 📁 File Structure
+## 📁 Project Structure
 
 ```
 Serverless/
-├── Dockerfile              # Container definition
-├── entrypoint.sh           # Main deployment script
-├── encrypt_utils.py        # Credential encryption utility
-├── generate-hash.sh        # Helper script for credential generation (ADMIN ONLY)
-├── config.py              # CDK configuration
-├── app.py                 # CDK app entry point
-├── cdk/
-│   └── cdk_stack.py       # Main CDK stack
-├── requirements.txt       # Python dependencies
-├── cdk.json              # CDK configuration
-└── Lambdas/              # Your Lambda function code
-    └── Expansion/
-        ├── tracer_import_results/
-        └── tracer_sqs_consumer/
+├── Lambdas/                          # Lambda functions organized by category
+│   └── Authentication/               # Authentication functions
+│       └── verifyCodeAndAuthHandler/ # Individual function folder
+│           ├── verifyCodeAndAuthHandler.py  # Function code
+│           ├── requirements.txt             # Function dependencies
+│           └── tests/                       # Function-specific tests
+│               └── test_verifyCodeAndAuthHandler.py
+├── scripts/                          # Deployment and management scripts
+│   ├── local_test.py                 # Local Lambda testing
+│   ├── lambda_alias_manager.py       # Alias management
+│   ├── deploy_with_aliases.py        # Deployment with aliases
+│   └── add_lambda_function.py        # Add new Lambda functions
+├── utils/                            # Utility scripts
+│   └── encrypt_utils.py              # Credential encryption utilities
+├── cdk/                              # CDK infrastructure code
+│   └── cdk_stack.py                  # Main CDK stack
+├── config.py                         # Configuration settings
+├── app.py                           # CDK app entry point
+├── requirements.txt                  # Python dependencies
+├── Dockerfile                        # Container definition
+└── README.md                        # This file
 ```
 
-## 🔧 Customization
+## 🎮 Interactive Menu
 
-### Update Lambda Function Names
+The interactive menu provides easy access to all deployment operations:
 
-Edit `config.py` to match your actual deployed Lambda function names:
+```
+🚀 Lambda Deployment Interactive Menu
+=====================================
 
-```python
-LAMBDA_FUNCTION_NAMES = {
-    "tracer_import_results": "your-actual-function-name",
-    "tracer_sqs_consumer": "your-actual-function-name",
-}
+Available Actions:
+  1) 🔍 Show Deployment Status
+  2) 🧪 Test Function Locally
+  3) 🧪 Run Unit Tests
+  4) 📋 List Test Events
+  5) 🆕 Create New Lambda Function
+  6) 💻 Interactive Shell
+  7) ❌ Exit
+
+Enter your choice (1-7):
 ```
 
-### Add More AWS Resources
+## 🚀 Your Complete Workflow
 
-Uncomment and customize the examples in `cdk/cdk_stack.py`:
+### Phase 1: Local Development & Testing
 
-- SQS queues
-- S3 buckets
-- EventBridge rules
-- Additional IAM permissions
+```bash
+# Start the interactive deployment system
+docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
+```
+
+**That's it!** The interactive menu focuses on development and testing:
+
+- 🆕 **Create New Lambda Function** - Add new functions easily
+- 🧪 **Test Function Locally** - Debug and validate your code
+- 🧪 **Run Unit Tests** - Ensure code quality
+- 📋 **List Test Events** - View available test data
+- 🔍 **Show Deployment Status** - View current deployments
+- 💻 **Interactive Shell** - Full CLI access
+
+🚀 **All deployments happen automatically via GitHub Actions CI/CD!**
+
+### Phase 2: Automated CI/CD Pipeline
+
+When you're ready to deploy, simply commit and push:
+
+```bash
+# Commit your changes
+git add .
+git commit -m "Add new userLogin function"
+git push origin main
+```
+
+When you push to `main`, GitHub Actions automatically:
+
+1. **Code Quality Checks**
+   - ✅ Linting with flake8
+   - ✅ Code formatting with black
+   - ✅ Unit tests for each function
+   - ✅ Local function tests
+
+2. **STAGING Deployment** (requires approval)
+   - 🚀 Deploys to `staging` alias
+   - ⏳ Waits for manual approval
+   - ✅ Runs integration tests
+
+### Phase 3: Production Deployment
+
+1. **Test in STAGING**
+   - Verify everything works in staging environment
+   - Check logs and metrics in AWS Console
+
+2. **Promote to PROD**
+   - Go to **Actions** → **Lambda Deployment Pipeline**
+   - Click **Run workflow**
+   - Select environment: `production`
+   - ⏳ Wait for approval
+   - ✅ Deployed to production
+
+## 🆕 Creating New Lambda Functions
+
+### Easy Function Creation
+
+The simplest way to add a new Lambda function is through the **interactive Docker menu**:
+
+1. **Start the container:**
+   ```bash
+   docker run --rm -it app deploy <your-credentials>
+   ```
+
+2. **Select option 9:** `🆕 Create New Lambda Function`
+
+3. **Follow the prompts:**
+   - Enter function name (e.g., `userLogin`, `processPayment`)
+   - Choose category:
+     - **Authentication** - login, signup, auth functions
+     - **Processing** - data processing, file handling
+     - **Communication** - email, SMS, notifications
+     - **Analytics** - reporting, data analysis
+     - **General** - default category
+     - **Custom** - create your own category
+
+4. **Done!** Your function is automatically:
+   - ✅ Created with proper folder structure
+   - ✅ Added to configuration files
+   - ✅ Ready for local testing
+   - ✅ Available in all menus instantly
+   - ✅ **Ready for CI/CD deployment when pushed to GitHub**
+
+### Alternative: Command Line
+
+You can also create functions directly via command line:
+
+```bash
+# Inside the container or locally:
+python3 scripts/add_lambda_function.py myFunction CategoryName
+```
+
+### What Gets Created
+
+When you create a new function, it automatically generates:
+
+```
+Lambdas/CategoryName/functionName/
+├── functionName.py              # Your Lambda function code
+├── requirements.txt             # Function-specific dependencies
+├── tests/
+│   └── test_functionName.py     # Unit tests
+└── test_events/
+    └── functionName_test_event.json # Test event data
+```
+
+### Complete Development Workflow
+
+```bash
+# 1. Create function via Docker menu
+docker run --rm -it app deploy <credentials>  # Option 5: Create New Lambda Function
+
+# 2. Test locally
+# Option 2: Test Function Locally
+# Option 3: Run Unit Tests
+
+# 3. Deploy via GitHub Actions
+git add .
+git commit -m "Add new function"
+git push origin main
+# ↳ Automatically deploys to STAGING (with approval)
+# ↳ Manual promotion to PROD via GitHub Actions
+```
+
+## 🛡️ Safety Features
+
+### What's Protected:
+
+- ✅ **No accidental deletions**: Functions are never deleted
+- ✅ **Version history**: All versions are preserved
+- ✅ **Rollback capability**: Easy rollback to previous versions
+- ✅ **Environment isolation**: STAGING and PROD are separate
+- ✅ **Approval gates**: Both environments require manual approval
+- ✅ **Local development**: DEV environment is local-only
+
+### Best Practices:
+
+1. **Always test locally first**
+2. **Use staging for validation**
+3. **Monitor deployments**
+4. **Keep version history**
 
 ## 🚨 Troubleshooting
 
-### Common Issues
+### Common Issues:
 
-**Error: "Function not found"**
-
-- Verify function names in `config.py` match your actual deployed functions
-- Check that you're in the correct AWS account/region
-
-**Error: "AWS connection failed"**
-
-- Verify your AWS credentials are correct
-- Ensure your AWS account has the necessary permissions
-
-**Error: "CDK bootstrap failed"**
-
-- This is normal if CDK is already bootstrapped
-- The deployment will continue
-
-**Error: "Permission denied"**
-
-- Ensure your AWS credentials have Lambda and IAM permissions
-- Check that CDK is bootstrapped in your account
-
-**Error: "Failed to decrypt credentials"**
-
-- Make sure you're using the exact hash provided by your admin
-- Check that the hash hasn't been modified or truncated
-- Ask your admin to generate a new hash if needed
-
-### Debug Commands
+**1. Function not found**
+**2. Aliases not configured**
+**3. Local testing fails**
 
 ```bash
-# Test AWS connection
-docker run --rm app aws sts get-caller-identity
-
-# List Lambda functions
-docker run --rm app aws lambda list-functions
-
-# Check CDK status
-docker run --rm app cdk diff
+# Just run the single command - it handles everything
+docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
 ```
 
-## 📊 Deployment Output
+**4. GitHub Actions failing**
 
-Successful deployment will show:
+- Check repository secrets are configured
+- See [GitHub Actions Setup Guide](../.github/SETUP.md) for detailed configuration
 
-```
-✅ AWS connection successful
-👤 Identity: arn:aws:iam::123456789012:user/your-user
-📋 Checking existing Lambda functions...
-🚀 Bootstrapping CDK...
-🚀 Deploying CDK stack...
-✅ Deployment completed successfully!
+## ⚙️ GitHub Actions Setup (Required for CI/CD)
 
-📊 Stack outputs:
-TracerLambdaStack
-```
+### Quick Setup:
 
-## 🎯 Benefits
+1. **Configure Repository Secrets:**
+   - Go to GitHub repository → **Settings** → **Secrets and variables** → **Actions**
+   - Add: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 
-- **Single Command**: Complete deployment with one Docker command
-- **Cross-Platform**: Works on Windows, macOS, and Linux
-- **Secure**: Credentials are encrypted and never stored
-- **Team-Friendly**: Share encrypted hashes instead of raw credentials
-- **No Setup**: No need to install AWS CLI, Python, or CDK locally
-- **Isolated**: All dependencies contained in Docker container
+2. **Configure Environments:**
+   - Go to **Settings** → **Environments**
+   - Create: `staging` and `production` environments
+   - Set production to require reviewers
 
-## 🔄 Workflow for Teams
+3. **Done!** Your CI/CD pipeline is ready.
 
-1. **Admin** creates encrypted hash and shares with team
-2. **Developers** use hash to deploy without seeing raw credentials
-3. **All developers** can deploy using the same secure hash
-4. **No credentials** are stored in version control
+📋 **Full setup guide:** [.github/SETUP.md](../.github/SETUP.md)
+- Verify AWS credentials have proper permissions
+- Check workflow logs for specific errors
 
----
+## 📊 Monitoring
 
-## 🔑 For Admins: How to Generate Encrypted Credentials
-
-**This section is for admins only. Developers should ask you for the hash.**
-
-If you need to create new encrypted credentials or your current ones have expired, follow these steps:
-
-### Option 1: Easy Way (Recommended)
-
-Use the helper script for interactive credential input:
+### Check Deployment Status
 
 ```bash
-./generate-hash.sh
+# Just run the single command
+docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
+# Then select: 1) 🔍 Show Deployment Status
 ```
 
-This will prompt you for your credentials and generate the exact command to use.
+## 🎉 Summary
 
-### Option 2: Manual Way
+Your deployment system provides:
 
-#### Step 1: Create Encrypted Credentials Hash
+- **🔒 Safety**: No accidental production changes
+- **🔄 Flexibility**: Easy environment promotion
+- **🧪 Testing**: Local testing without affecting production
+- **📋 Automation**: GitHub Actions CI/CD pipeline
+- **🛡️ Reliability**: Version history and rollback capability
+- **🎮 Single Command**: Just one command to start everything
+
+**Ready to start?** Run this command:
 
 ```bash
-docker run --rm app hash <your_access_key> <your_secret_key> <your_region>
+docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
 ```
-
-**Example:**
-
-```bash
-docker run --rm app hash AKIATYDCXTUVLGSA6HMK OinVuEzoBzSxQzDrn9KvYytRpoLjzgObYPaA2KnC us-east-1
-```
-
-**Output:**
-
-```
-🔐 Creating encrypted credentials hash...
-✅ Encrypted credentials hash:
-QUtJQVRZRENYVFVWTEZTQTZITUs6T2luVnVFem9CelpTeFF6RHJuOUt2WXl0UnBvTGp6Z09iWVBhQTJLbkM6dXMtZWFzdC0x
-
-📋 Use this hash for deployment:
-docker run --rm app deploy QUtJQVRZRENYVFVWTEZTQTZITUs6T2luVnVFem9CelpTeFF6RHJuOUt2WXl0UnBvTGp6Z09iWVBhQTJLbkM6dXMtZWFzdC0x
-```
-
-#### Step 2: Share with Your Team
-
-Copy the generated hash and share it with your developers. They will use it like this:
-
-```bash
-docker run --rm app deploy <your_generated_hash>
-```
-
-### Getting AWS Credentials
-
-1. **Go to AWS Console** → IAM → Users → Your User
-2. **Security credentials tab** → Create access key
-3. **Choose use case**: Application running outside AWS
-4. **Download the CSV file** with your credentials
-
----
-
-### Key Features
-
-- **Version Control:** We can track and review every change made to our cloud infrastructure, with a special focus on our Lambda functions.
-- **Safe Rollbacks:** The version history allows us to safely roll back to a previous state if needed.
-- **Collaborative Development:** Using pull requests and code reviews, we can collaborate more effectively on our infrastructure code.
-- **Docker Deployment:** Single-command deployment using Docker with encrypted credentials.
-
----
-
-### Future Improvements (Nice to Have – Not Required as of 07-30-25)
-
-- Improve deployment by integrating with **CI/CD pipelines**.
-- Keep **infrastructure-as-code (IaC)** in a single, organized location to improve maintenance and scalability.
