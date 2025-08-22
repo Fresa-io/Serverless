@@ -106,6 +106,36 @@ class LambdaDeployer:
         print(f"⏰ Timeout waiting for function update")
         return False
     
+    def function_code_changed(self, function_name: str, zip_path: str) -> bool:
+        """Check if function code has changed by comparing SHA256 hashes"""
+        try:
+            # Get current function info
+            response = self.lambda_client.get_function(FunctionName=function_name)
+            current_sha256 = response['Configuration']['CodeSha256']
+            
+            # Calculate SHA256 of new zip file
+            import hashlib
+            with open(zip_path, 'rb') as f:
+                new_sha256 = hashlib.sha256(f.read()).hexdigest()
+            
+            # Compare hashes
+            changed = current_sha256 != new_sha256
+            
+            if changed:
+                print(f"🔄 Code changes detected for {function_name}")
+                print(f"   Current SHA256: {current_sha256[:12]}...")
+                print(f"   New SHA256:     {new_sha256[:12]}...")
+            else:
+                print(f"✅ No code changes for {function_name} (SHA256: {current_sha256[:12]}...)")
+            
+            return changed
+            
+        except Exception as e:
+            # If we can't check, assume it changed (safe default)
+            print(f"⚠️  Could not check code changes for {function_name}: {e}")
+            print(f"   Proceeding with deployment as safe default")
+            return True
+    
     def deploy_function(self, function_key: str, environment: str) -> bool:
         """Deploy a specific function to STAGING or PROD environment"""
         if function_key not in self.functions:
@@ -145,19 +175,28 @@ class LambdaDeployer:
         try:
             self.create_deployment_package(function_dir, zip_path)
             
-            # Update function code
-            if not self.update_function_code(function_name, zip_path):
-                return False
+            # Check if function code actually changed
+            needs_update = self.function_code_changed(function_name, zip_path)
             
-            # Wait for update to complete
-            if not self.wait_for_function_update(function_name):
-                return False
-            
-            # Publish new version
-            version = self.alias_manager.publish_version(
-                function_name, 
-                f"Deployed to {environment} environment"
-            )
+            if needs_update:
+                # Update function code
+                if not self.update_function_code(function_name, zip_path):
+                    return False
+                
+                # Wait for update to complete
+                if not self.wait_for_function_update(function_name):
+                    return False
+                
+                # Publish new version
+                version = self.alias_manager.publish_version(
+                    function_name, 
+                    f"Deployed to {environment} environment"
+                )
+            else:
+                print(f"⏭️  No changes detected for {function_name}, skipping deployment")
+                # Get current alias version
+                alias_info = self.alias_manager.get_alias_info(function_name, alias_name)
+                version = alias_info['FunctionVersion'] if alias_info else None
             
             if not version:
                 return False
