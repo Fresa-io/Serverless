@@ -68,7 +68,7 @@ jobs:
           python scripts/deploy_with_aliases.py status
           echo ""
 
-            - name: Rollback to Previous Version
+      - name: Rollback to Previous Version
         if: github.event.inputs.rollback_strategy == 'previous_version'
         run: |
           echo "🔄 Rolling back to previous version..."
