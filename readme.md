@@ -215,11 +215,13 @@ docker run --rm -it app deploy <credentials>  # Option 5: Create New Lambda Func
 # Option 2: Test Function Locally
 # Option 3: Run Unit Tests
 
-# 3. Deploy via GitHub Actions
+# 3. Create feature branch and deploy via Pull Request
+git checkout -b feature/my-new-function
 git add .
 git commit -m "Add new function"
-git push origin main
-# ↳ Automatically deploys to STAGING (with approval)
+git push origin feature/my-new-function
+# ↳ Create PR → Triggers validation → Manual review → Merge to main
+# ↳ Merge triggers automatic STAGING deployment
 # ↳ Manual promotion to PROD via GitHub Actions
 ```
 
@@ -227,19 +229,32 @@ git push origin main
 
 ### What's Protected:
 
+- ✅ **No direct commits to main**: Branch protection prevents accidents
+- ✅ **Pull Request workflow**: All changes require review and approval
+- ✅ **Automated testing**: PR validation runs before merge
 - ✅ **No accidental deletions**: Functions are never deleted
 - ✅ **Version history**: All versions are preserved
 - ✅ **Rollback capability**: Easy rollback to previous versions
 - ✅ **Environment isolation**: STAGING and PROD are separate
-- ✅ **Approval gates**: Both environments require manual approval
+- ✅ **Approval gates**: Production requires manual approval
 - ✅ **Local development**: DEV environment is local-only
+
+### Security Workflow:
+
+1. **Feature Branch** → Create isolated branch for changes
+2. **Pull Request** → Triggers automated validation (testing, linting, security)
+3. **Manual Review** → Human approval required before merge
+4. **Merge to Main** → Triggers automatic STAGING deployment
+5. **Production** → Manual approval required for PROD deployment
 
 ### Best Practices:
 
-1. **Always test locally first**
-2. **Use staging for validation**
-3. **Monitor deployments**
-4. **Keep version history**
+1. **Always create feature branches**
+2. **Test locally first**
+3. **Write meaningful commit messages**
+4. **Use staging for validation**
+5. **Monitor deployments**
+6. **Keep version history**
 
 ## 🚨 Troubleshooting
 
@@ -267,14 +282,23 @@ docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEc
    - Go to GitHub repository → **Settings** → **Secrets and variables** → **Actions**
    - Add: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 
-2. **Configure Environments:**
+2. **Configure Branch Protection:**
+   - Go to **Settings** → **Branches**
+   - Add rule for `main` branch
+   - Enable: "Require a pull request before merging"
+   - Enable: "Require status checks to pass before merging"
+   - Add required checks: `Validate Pull Request / validate-pr` and `Validate Pull Request / security-scan`
+
+3. **Configure Environments:**
    - Go to **Settings** → **Environments**
-   - Create: `staging` and `production` environments
+   - Create: `production` environment (staging uses no protection)
    - Set production to require reviewers
 
-3. **Done!** Your CI/CD pipeline is ready.
+4. **Done!** Your CI/CD pipeline is ready.
 
-📋 **Full setup guide:** [.github/SETUP.md](../.github/SETUP.md)
+📋 **Full setup guides:** 
+- [GitHub Actions Setup](.github/SETUP.md)
+- [Branch Protection Setup](.github/BRANCH_PROTECTION_SETUP.md)
 - Verify AWS credentials have proper permissions
 - Check workflow logs for specific errors
 
