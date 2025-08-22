@@ -51,15 +51,21 @@ jobs:
         run: |
           # Run tests for verifyCodeAndAuthHandler
           cd Lambdas/Authentication/verifyCodeAndAuthHandler
-          python -m pytest tests/ -v || echo "No tests found for verifyCodeAndAuthHandler"
+          if [ -d "tests" ] && [ "$(find tests -name "*.py" | wc -l)" -gt 0 ]; then
+            echo "🧪 Running unit tests for verifyCodeAndAuthHandler..."
+            python -m pytest tests/ -v
+          else
+            echo "⚠️  No tests found for verifyCodeAndAuthHandler - this should be addressed"
+          fi
           cd ../../..
 
           # Add more function tests here automatically when new functions are created
 
       - name: Local function tests
         run: |
-          # Test each function locally
-          python scripts/local_test.py test verifyCodeAndAuthHandler || echo "Local test failed for verifyCodeAndAuthHandler"
+          # Test each function locally - FAIL if tests fail
+          echo "🧪 Running local function tests..."
+          python scripts/local_test.py test verifyCodeAndAuthHandler
 
           # Add more local tests here automatically when new functions are created
 
