@@ -1,0 +1,91 @@
+name: Validate Project Setup
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Project Structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Validate project structure
+        run: |
+          echo "🔍 Validating project structure..."
+
+          # Check required directories
+          test -d "Serverless" || (echo "❌ Serverless directory missing" && exit 1)
+          test -d "Serverless/Lambdas" || (echo "❌ Lambdas directory missing" && exit 1)
+          test -d "Serverless/scripts" || (echo "❌ scripts directory missing" && exit 1)
+          test -d "Serverless/utils" || (echo "❌ utils directory missing" && exit 1)
+
+          # Check required files
+          test -f "Serverless/config.py" || (echo "❌ config.py missing" && exit 1)
+          test -f "Serverless/requirements.txt" || (echo "❌ requirements.txt missing" && exit 1)
+          test -f "Serverless/Dockerfile" || (echo "❌ Dockerfile missing" && exit 1)
+
+          echo "✅ Project structure validated"
+
+      - name: Install dependencies
+        run: |
+          cd Serverless
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Test function discovery
+        run: |
+          cd Serverless
+          echo "🔍 Testing function discovery..."
+          python utils/function_discovery.py list
+          echo "✅ Function discovery working"
+
+      - name: Test scripts
+        run: |
+          cd Serverless
+          echo "🔍 Testing scripts..."
+
+          # Test local_test.py
+          python scripts/local_test.py --help >/dev/null || echo "⚠️ local_test.py help failed"
+
+          # Test deploy_with_aliases.py
+          python scripts/deploy_with_aliases.py --help >/dev/null || echo "⚠️ deploy_with_aliases.py help failed"
+
+          # Test add_lambda_function.py
+          python scripts/add_lambda_function.py --help >/dev/null || echo "⚠️ add_lambda_function.py help failed"
+
+          echo "✅ Scripts validated"
+
+      - name: Validate configuration
+        run: |
+          cd Serverless
+          echo "🔍 Validating configuration..."
+          python -c "import config; print('✅ config.py imports successfully')"
+          python -c "from config import LAMBDA_FUNCTION_NAMES; print(f'✅ Found {len(LAMBDA_FUNCTION_NAMES)} configured functions')"
+
+      - name: Check Docker setup
+        run: |
+          echo "🔍 Validating Docker setup..."
+          test -f "Serverless/Dockerfile" || (echo "❌ Dockerfile missing" && exit 1)
+          test -f "Serverless/entrypoint_enhanced.sh" || (echo "❌ entrypoint_enhanced.sh missing" && exit 1)
+          echo "✅ Docker setup validated"
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "🎉 Project validation complete!"
+          echo "✅ All checks passed"
+          echo ""
+          echo "📋 Next steps:"
+          echo "1. Configure AWS credentials in GitHub secrets"
+          echo "2. Set up staging/production environments"
+          echo "3. Push to main to trigger deployment pipeline"

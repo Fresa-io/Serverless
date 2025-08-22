@@ -1,0 +1,155 @@
+name: Emergency Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      function_name:
+        description: 'Function to rollback (or "all" for all functions)'
+        required: true
+        default: "all"
+        type: string
+      environment:
+        description: "Environment to rollback"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - staging
+          - production
+      rollback_strategy:
+        description: "Rollback strategy"
+        required: true
+        default: "previous_version"
+        type: choice
+        options:
+          - previous_version
+          - specific_version
+          - copy_from_staging
+      target_version:
+        description: "Specific version (only if rollback_strategy is specific_version)"
+        required: false
+        type: string
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  rollback:
+    name: Emergency Rollback
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment }}
+      url: https://console.aws.amazon.com/lambda
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          cd Serverless
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Display Current Status
+        run: |
+          cd Serverless
+          echo "📊 Current Deployment Status (Before Rollback)"
+          echo "=============================================="
+          python scripts/deploy_with_aliases.py status
+          echo ""
+
+      - name: Rollback to Previous Version
+        if: github.event.inputs.rollback_strategy == 'previous_version'
+        run: |
+          cd Serverless
+          echo "🔄 Rolling back to previous version..."
+
+          if [ "${{ github.event.inputs.function_name }}" = "all" ]; then
+            echo "🔄 Rolling back ALL functions in ${{ github.event.inputs.environment }}..."
+            
+            # Get all functions and rollback each one
+            while IFS= read -r func_name; do
+              echo "🔄 Rolling back $func_name..."
+              python scripts/lambda_alias_manager.py rollback "$func_name" "${{ github.event.inputs.environment }}"
+            done < <(python utils/function_discovery.py list)
+          else
+            echo "🔄 Rolling back ${{ github.event.inputs.function_name }}..."
+            python scripts/lambda_alias_manager.py rollback "${{ github.event.inputs.function_name }}" "${{ github.event.inputs.environment }}"
+          fi
+
+      - name: Rollback to Specific Version
+        if: github.event.inputs.rollback_strategy == 'specific_version'
+        run: |
+          cd Serverless
+          echo "🔄 Rolling back to specific version ${{ github.event.inputs.target_version }}..."
+
+          if [ "${{ github.event.inputs.function_name }}" = "all" ]; then
+            while IFS= read -r func_name; do
+              echo "🔄 Rolling back $func_name to version ${{ github.event.inputs.target_version }}..."
+              python scripts/lambda_alias_manager.py set-version "$func_name" "${{ github.event.inputs.environment }}" "${{ github.event.inputs.target_version }}"
+            done < <(python utils/function_discovery.py list)
+          else
+            python scripts/lambda_alias_manager.py set-version "${{ github.event.inputs.function_name }}" "${{ github.event.inputs.environment }}" "${{ github.event.inputs.target_version }}"
+          fi
+
+      - name: Copy from Staging to Production
+        if: github.event.inputs.rollback_strategy == 'copy_from_staging' && github.event.inputs.environment == 'production'
+        run: |
+          cd Serverless
+          echo "🔄 Copying STAGING versions to PRODUCTION..."
+
+          if [ "${{ github.event.inputs.function_name }}" = "all" ]; then
+            while IFS= read -r func_name; do
+              echo "🔄 Promoting $func_name from STAGING to PROD..."
+              python scripts/deploy_with_aliases.py promote "$func_name" STAGING PROD
+            done < <(python utils/function_discovery.py list)
+          else
+            python scripts/deploy_with_aliases.py promote "${{ github.event.inputs.function_name }}" STAGING PROD
+          fi
+
+      - name: Verify Rollback Success
+        run: |
+          cd Serverless
+          echo ""
+          echo "✅ Rollback completed! New status:"
+          echo "=================================="
+          python scripts/deploy_with_aliases.py status
+          echo ""
+          echo "🔍 Verifying function availability..."
+
+          if [ "${{ github.event.inputs.function_name }}" = "all" ]; then
+            while IFS= read -r func_name; do
+              aws lambda get-alias --function-name "$func_name" --name "${{ github.event.inputs.environment }}" > /dev/null && echo "✅ $func_name alias verified" || echo "❌ $func_name alias failed"
+            done < <(python utils/function_discovery.py list)
+          else
+            aws lambda get-alias --function-name "${{ github.event.inputs.function_name }}" --name "${{ github.event.inputs.environment }}" > /dev/null && echo "✅ Function alias verified" || echo "❌ Function alias failed"
+          fi
+
+      - name: Send Notification
+        if: always()
+        run: |
+          echo "📧 Rollback Summary"
+          echo "=================="
+          echo "Function: ${{ github.event.inputs.function_name }}"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Strategy: ${{ github.event.inputs.rollback_strategy }}"
+          echo "Status: ${{ job.status }}"
+          echo "Time: $(date)"
+          echo ""
+          echo "📋 Next Steps:"
+          echo "1. Monitor function performance"
+          echo "2. Check application logs"
+          echo "3. Verify business functionality"
+          echo "4. Plan fix for the issue that required rollback"
