@@ -1,6 +1,6 @@
 # 🚀 Lambda Deployment System
 
-A comprehensive Lambda deployment system with alias management, local testing, and interactive deployment workflows..
+A comprehensive Lambda deployment system with alias management, local testing, and interactive deployment workflows.
 
 ## 🎯 The Magic: One Command Does Everything
 
