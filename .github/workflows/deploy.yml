@@ -34,25 +34,21 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd Serverless
           python -m pip install --upgrade pip
           pip install flake8 black pytest boto3 moto
           pip install -r requirements.txt
 
       - name: Code formatting check
         run: |
-          cd Serverless
           black --check --diff .
 
       - name: Linting
         run: |
-          cd Serverless
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Run unit tests
         run: |
-          cd Serverless
           # Run tests for verifyCodeAndAuthHandler
           cd Lambdas/Authentication/verifyCodeAndAuthHandler
           python -m pytest tests/ -v || echo "No tests found for verifyCodeAndAuthHandler"
@@ -62,7 +58,6 @@ jobs:
 
       - name: Local function tests
         run: |
-          cd Serverless
           # Test each function locally
           python scripts/local_test.py test verifyCodeAndAuthHandler || echo "Local test failed for verifyCodeAndAuthHandler"
 
@@ -87,7 +82,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd Serverless
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -104,8 +98,6 @@ jobs:
 
       - name: Deploy to STAGING
         run: |
-          cd Serverless
-
           # Deploy all functions to STAGING
           python scripts/deploy_with_aliases.py deploy-all STAGING
 
@@ -113,13 +105,11 @@ jobs:
 
       - name: Run integration tests
         run: |
-          cd Serverless
           # Add integration tests here
           echo "✅ Integration tests passed"
 
       - name: Post deployment status
         run: |
-          cd Serverless
           python scripts/deploy_with_aliases.py status
 
   deploy-production:
@@ -141,7 +131,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd Serverless
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -158,8 +147,6 @@ jobs:
 
       - name: Deploy to PRODUCTION
         run: |
-          cd Serverless
-
           # Deploy all functions to PRODUCTION
           python scripts/deploy_with_aliases.py deploy-all PROD
 
@@ -167,7 +154,6 @@ jobs:
 
       - name: Post deployment status
         run: |
-          cd Serverless
           python scripts/deploy_with_aliases.py status
 
   promote-staging-to-prod:
@@ -188,7 +174,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd Serverless
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -201,8 +186,6 @@ jobs:
 
       - name: Promote STAGING to PROD
         run: |
-          cd Serverless
-
           # Get all functions dynamically and promote them
           while IFS= read -r func_name; do
             echo "🔄 Promoting $func_name from STAGING to PROD..."
@@ -213,5 +196,4 @@ jobs:
 
       - name: Final deployment status
         run: |
-          cd Serverless
           python scripts/deploy_with_aliases.py status

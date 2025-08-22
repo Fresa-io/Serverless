@@ -51,7 +51,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd Serverless
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -64,21 +63,19 @@ jobs:
 
       - name: Display Current Status
         run: |
-          cd Serverless
           echo "📊 Current Deployment Status (Before Rollback)"
           echo "=============================================="
           python scripts/deploy_with_aliases.py status
           echo ""
 
-      - name: Rollback to Previous Version
+            - name: Rollback to Previous Version
         if: github.event.inputs.rollback_strategy == 'previous_version'
         run: |
-          cd Serverless
           echo "🔄 Rolling back to previous version..."
 
           if [ "${{ github.event.inputs.function_name }}" = "all" ]; then
             echo "🔄 Rolling back ALL functions in ${{ github.event.inputs.environment }}..."
-            
+
             # Get all functions and rollback each one
             while IFS= read -r func_name; do
               echo "🔄 Rolling back $func_name..."
@@ -92,7 +89,6 @@ jobs:
       - name: Rollback to Specific Version
         if: github.event.inputs.rollback_strategy == 'specific_version'
         run: |
-          cd Serverless
           echo "🔄 Rolling back to specific version ${{ github.event.inputs.target_version }}..."
 
           if [ "${{ github.event.inputs.function_name }}" = "all" ]; then
@@ -107,7 +103,6 @@ jobs:
       - name: Copy from Staging to Production
         if: github.event.inputs.rollback_strategy == 'copy_from_staging' && github.event.inputs.environment == 'production'
         run: |
-          cd Serverless
           echo "🔄 Copying STAGING versions to PRODUCTION..."
 
           if [ "${{ github.event.inputs.function_name }}" = "all" ]; then
@@ -121,7 +116,6 @@ jobs:
 
       - name: Verify Rollback Success
         run: |
-          cd Serverless
           echo ""
           echo "✅ Rollback completed! New status:"
           echo "=================================="
