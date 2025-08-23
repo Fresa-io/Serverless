@@ -272,7 +272,7 @@ docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEc
 **4. GitHub Actions failing**
 
 - Check repository secrets are configured
-- See [GitHub Actions Setup Guide](../.github/SETUP.md) for detailed configuration
+- See [GitHub Actions Setup Guide](.github/SETUP.md) for detailed configuration
 
 ## ⚙️ GitHub Actions Setup (Required for CI/CD)
 

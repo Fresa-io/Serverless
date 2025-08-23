@@ -9,7 +9,7 @@ This guide shows you how to set up **branch protection rules** to prevent direct
 ✅ **Automated testing before merge**  
 ✅ **Manual review process**  
 ✅ **Conflict detection**  
-✅ **Security scanning**  
+✅ **Security scanning**
 
 ## 🚀 Quick Setup (GitHub Web Interface)
 
@@ -33,14 +33,14 @@ This guide shows you how to set up **branch protection rules** to prevent direct
    ☑️ Dismiss stale PR approvals when new commits are pushed
    ☑️ Require review from code owners
    ☑️ Restrict pushes that create files to code owners
-   
+
 ☑️ Require status checks to pass before merging
    ☑️ Require branches to be up to date before merging
-   
+
    Required status checks:
    - Validate Pull Request / validate-pr
    - Validate Pull Request / security-scan
-   
+
 ☑️ Require conversation resolution before merging
 ☑️ Require signed commits
 ☑️ Require linear history
@@ -98,12 +98,14 @@ graph TD
 ### What Gets Checked in PR Validation:
 
 1. **Code Quality**
+
    - Formatting (black)
    - Linting (flake8)
    - Unit tests
    - Local function tests
 
 2. **Security**
+
    - Secret scanning
    - Vulnerability scanning
    - Permission checks
@@ -165,6 +167,7 @@ gh pr create --title "HOTFIX: Critical bug fix" --body "Emergency fix for produc
 ## 🎖️ Best Practices
 
 ### ✅ DO:
+
 - Use descriptive branch names (`feature/auth-handler`, `fix/deployment-error`)
 - Write clear commit messages
 - Keep PRs focused and small
@@ -173,6 +176,7 @@ gh pr create --title "HOTFIX: Critical bug fix" --body "Emergency fix for produc
 - Respond to PR feedback promptly
 
 ### ❌ DON'T:
+
 - Try to push directly to main (it's blocked anyway)
 - Create massive PRs with multiple features
 - Skip writing tests
@@ -182,12 +186,15 @@ gh pr create --title "HOTFIX: Critical bug fix" --body "Emergency fix for produc
 ## 🚨 Troubleshooting
 
 ### "Branch protection rules block this push"
+
 - **Solution**: Create a feature branch and open a PR
 
 ### "Required status checks have not passed"
+
 - **Solution**: Check the Actions tab for test failures and fix them
 
 ### "Pull request is out of date"
+
 - **Solution**: Update your branch with main:
   ```bash
   git checkout main
@@ -198,6 +205,7 @@ gh pr create --title "HOTFIX: Critical bug fix" --body "Emergency fix for produc
   ```
 
 ### "Merge conflicts detected"
+
 - **Solution**: Resolve conflicts locally:
   ```bash
   git checkout main
