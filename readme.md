@@ -1,6 +1,6 @@
 # 🚀 Lambda Deployment System
 
-A comprehensive Lambda deployment system with alias management, local testing, and interactive deployment workflows.
+A comprehensive Lambda deployment system with alias management, local testing, and interactive deployment workflows
 
 ## 🎯 The Magic: One Command Does Everything
 
@@ -232,6 +232,8 @@ git push origin feature/my-new-function
 - ✅ **No direct commits to main**: Branch protection prevents accidents
 - ✅ **Pull Request workflow**: All changes require review and approval
 - ✅ **Automated testing**: PR validation runs before merge
+- ✅ **Smart deployments**: Only deploys when Lambda code actually changes
+- ✅ **Efficient CI/CD**: Documentation changes don't trigger deployments
 - ✅ **No accidental deletions**: Functions are never deleted
 - ✅ **Version history**: All versions are preserved
 - ✅ **Rollback capability**: Easy rollback to previous versions
@@ -247,6 +249,26 @@ git push origin feature/my-new-function
 4. **Merge to Main** → Triggers automatic STAGING deployment
 5. **Production** → Manual approval required for PROD deployment
 
+### Smart Deployment Logic:
+
+#### **What Triggers Deployment:**
+- Changes to Lambda function code (`Lambdas/**`)
+- Changes to deployment scripts (`scripts/**`, `utils/**`)
+- Changes to infrastructure (`cdk/**`, `config.py`, `app.py`)
+- Changes to dependencies (`requirements.txt`)
+- Changes to workflows (`.github/workflows/**`)
+
+#### **What Skips Deployment:**
+- Documentation changes (`**.md`)
+- README updates
+- Dockerfile modifications
+- .gitignore changes
+- Non-functional file updates
+
+#### **Additional Protection:**
+- Even when deployment runs, individual Lambda functions are only updated if their **code SHA256 hash changed**
+- This prevents unnecessary version bumps when only dependencies or infrastructure change
+
 ### Best Practices:
 
 1. **Always create feature branches**
@@ -255,6 +277,7 @@ git push origin feature/my-new-function
 4. **Use staging for validation**
 5. **Monitor deployments**
 6. **Keep version history**
+7. **Group related changes** (code + docs) in single PRs when appropriate
 
 ## 🚨 Troubleshooting
 

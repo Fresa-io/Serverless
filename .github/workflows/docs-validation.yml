@@ -1,0 +1,156 @@
+name: Documentation Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      # Only trigger for documentation changes
+      - '**.md'
+      - '.gitignore'
+      - 'Dockerfile'
+      - 'entrypoint*.sh'
+    paths-ignore:
+      # Exclude if code changes are also present
+      - 'Lambdas/**'
+      - 'scripts/**'
+      - 'utils/**'
+      - 'cdk/**'
+      - 'config.py'
+      - 'app.py'
+      - 'requirements.txt'
+      - '.github/workflows/**'
+
+jobs:
+  validate-docs:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
+      - name: Check markdown links
+        run: |
+          echo "🔍 Checking markdown file links..."
+          
+          # Check if any .md files have broken relative links
+          for md_file in $(find . -name "*.md" -type f); do
+            echo "Checking $md_file..."
+            
+            # Extract markdown links [text](path)
+            grep -oE '\[([^]]+)\]\(([^)]+)\)' "$md_file" | while read -r link; do
+              # Extract the path part
+              path=$(echo "$link" | sed 's/.*](\([^)]*\)).*/\1/')
+              
+              # Skip external links (http/https)
+              if [[ "$path" =~ ^https?:// ]]; then
+                continue
+              fi
+              
+              # Skip anchors (#)
+              if [[ "$path" =~ ^# ]]; then
+                continue
+              fi
+              
+              # Check if relative file exists
+              if [[ "$path" =~ ^\. ]]; then
+                file_dir=$(dirname "$md_file")
+                full_path="$file_dir/$path"
+                if [ ! -f "$full_path" ] && [ ! -d "$full_path" ]; then
+                  echo "❌ Broken link in $md_file: $path (resolves to $full_path)"
+                  exit 1
+                fi
+              fi
+            done
+          done
+          
+          echo "✅ All markdown links validated"
+
+      - name: Check for TODO markers
+        run: |
+          echo "🔍 Checking for TODO markers in documentation..."
+          
+          if grep -rn "TODO\|FIXME\|XXX" --include="*.md" .; then
+            echo "⚠️  Found TODO markers in documentation - consider completing them"
+          else
+            echo "✅ No TODO markers found in documentation"
+          fi
+
+      - name: Validate project structure mentioned in docs
+        run: |
+          echo "🔍 Validating project structure mentioned in README..."
+          
+          # Check if directories mentioned in README actually exist
+          if grep -q "Lambdas/" README.md; then
+            if [ ! -d "Lambdas" ]; then
+              echo "❌ README mentions Lambdas/ but directory doesn't exist"
+              exit 1
+            fi
+          fi
+          
+          if grep -q "scripts/" README.md; then
+            if [ ! -d "scripts" ]; then
+              echo "❌ README mentions scripts/ but directory doesn't exist"
+              exit 1
+            fi
+          fi
+          
+          if grep -q "utils/" README.md; then
+            if [ ! -d "utils" ]; then
+              echo "❌ README mentions utils/ but directory doesn't exist"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ Project structure in documentation is accurate"
+
+  comment-on-docs-pr:
+    name: Comment on Documentation PR
+    runs-on: ubuntu-latest
+    needs: [validate-docs]
+    if: always()
+    
+    steps:
+      - name: Comment on documentation PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const status = '${{ needs.validate-docs.result }}';
+            const emoji = status === 'success' ? '✅' : '❌';
+            const statusText = status === 'success' ? 'PASSED' : 'FAILED';
+            
+            const comment = `## 📚 Documentation Validation Results
+            
+**Status: ${emoji} ${statusText}**
+
+${status === 'success' 
+  ? '✅ **Documentation changes look good!** No deployment will be triggered since only non-code files changed.' 
+  : '❌ **Please fix the documentation issues above.**'
+}
+
+---
+*This is a lightweight validation for documentation-only changes*`;
+
+            // Remove old comments
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            for (const comment of comments) {
+              if (comment.user.type === 'Bot' && comment.body.includes('📚 Documentation Validation Results')) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id,
+                });
+              }
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });

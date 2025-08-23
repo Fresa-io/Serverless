@@ -85,8 +85,3 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
-# SSH Keys
-luis
-luis.pub
-*.pub
-id_rsa*

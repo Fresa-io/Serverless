@@ -3,6 +3,16 @@ name: Pull Request Validation
 on:
   pull_request:
     branches: [main]
+    paths:
+      # Only trigger for code and configuration changes
+      - 'Lambdas/**'
+      - 'scripts/**'
+      - 'utils/**'
+      - 'cdk/**'
+      - 'config.py'
+      - 'app.py'
+      - 'requirements.txt'
+      - '.github/workflows/**'
 
 env:
   AWS_REGION: us-east-1
