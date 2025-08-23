@@ -5,21 +5,21 @@ on:
     branches: [main]
     paths:
       # Only trigger on changes to code and configuration
-      - 'Lambdas/**'
-      - 'scripts/**'
-      - 'utils/**'
-      - 'cdk/**'
-      - 'config.py'
-      - 'app.py'
-      - 'requirements.txt'
-      - '.github/workflows/**'
+      - "Lambdas/**"
+      - "scripts/**"
+      - "utils/**"
+      - "cdk/**"
+      - "config.py"
+      - "app.py"
+      - "requirements.txt"
+      - ".github/workflows/**"
     # Exclude documentation and non-functional changes
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - '.gitignore'
-      - 'Dockerfile'
-      - 'entrypoint*.sh'
+      - "**.md"
+      - "**.txt"
+      - ".gitignore"
+      - "Dockerfile"
+      - "entrypoint*.sh"
   workflow_dispatch:
     inputs:
       environment:
