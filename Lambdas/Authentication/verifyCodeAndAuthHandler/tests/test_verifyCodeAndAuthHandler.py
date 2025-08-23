@@ -70,9 +70,11 @@ class TestVerifyCodeAndAuthHandler(unittest.TestCase):
         body = json.loads(response["body"])
         self.assertIn("Invalid JSON", body["error"])
 
-    @patch("verifyCodeAndAuthHandler.cognito")
-    def test_check_user_exists_success(self, mock_cognito):
+    @patch("verifyCodeAndAuthHandler.get_cognito_client")
+    def test_check_user_exists_success(self, mock_get_cognito):
         """Test successful user existence check"""
+        mock_cognito = Mock()
+        mock_get_cognito.return_value = mock_cognito
         mock_cognito.admin_get_user.return_value = {"Username": "test@example.com"}
 
         result = check_user_exists_in_cognito("test@example.com")
@@ -80,11 +82,13 @@ class TestVerifyCodeAndAuthHandler(unittest.TestCase):
         self.assertTrue(result)
         mock_cognito.admin_get_user.assert_called_once()
 
-    @patch("verifyCodeAndAuthHandler.cognito")
-    def test_check_user_not_exists(self, mock_cognito):
+    @patch("verifyCodeAndAuthHandler.get_cognito_client")
+    def test_check_user_not_exists(self, mock_get_cognito):
         """Test user does not exist"""
         from botocore.exceptions import ClientError
 
+        mock_cognito = Mock()
+        mock_get_cognito.return_value = mock_cognito
         error = ClientError(
             {"Error": {"Code": "UserNotFoundException"}}, "AdminGetUser"
         )
@@ -94,11 +98,13 @@ class TestVerifyCodeAndAuthHandler(unittest.TestCase):
 
         self.assertFalse(result)
 
-    @patch("verifyCodeAndAuthHandler.dynamodb")
-    def test_validate_code_success(self, mock_dynamodb):
+    @patch("verifyCodeAndAuthHandler.get_dynamodb_resource")
+    def test_validate_code_success(self, mock_get_dynamodb):
         """Test successful code validation"""
         import time
 
+        mock_dynamodb = Mock()
+        mock_get_dynamodb.return_value = mock_dynamodb
         mock_table = Mock()
         mock_dynamodb.Table.return_value = mock_table
 
@@ -114,11 +120,13 @@ class TestVerifyCodeAndAuthHandler(unittest.TestCase):
 
         self.assertTrue(result["valid"])
 
-    @patch("verifyCodeAndAuthHandler.dynamodb")
-    def test_validate_code_expired(self, mock_dynamodb):
+    @patch("verifyCodeAndAuthHandler.get_dynamodb_resource")
+    def test_validate_code_expired(self, mock_get_dynamodb):
         """Test expired code validation"""
         import time
 
+        mock_dynamodb = Mock()
+        mock_get_dynamodb.return_value = mock_dynamodb
         mock_table = Mock()
         mock_dynamodb.Table.return_value = mock_table
 
@@ -136,11 +144,13 @@ class TestVerifyCodeAndAuthHandler(unittest.TestCase):
         self.assertEqual(result["error"], "Verification code has expired")
         self.assertEqual(result["status_code"], 401)
 
-    @patch("verifyCodeAndAuthHandler.dynamodb")
-    def test_validate_code_wrong_code(self, mock_dynamodb):
+    @patch("verifyCodeAndAuthHandler.get_dynamodb_resource")
+    def test_validate_code_wrong_code(self, mock_get_dynamodb):
         """Test wrong code validation"""
         import time
 
+        mock_dynamodb = Mock()
+        mock_get_dynamodb.return_value = mock_dynamodb
         mock_table = Mock()
         mock_dynamodb.Table.return_value = mock_table
 

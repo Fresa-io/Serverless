@@ -5,8 +5,21 @@ import time
 from json import JSONDecodeError
 from botocore.exceptions import ClientError
 
-cognito = boto3.client("cognito-idp")
-dynamodb = boto3.resource("dynamodb")
+# Initialize clients lazily to avoid region issues during testing
+_cognito = None
+_dynamodb = None
+
+def get_cognito_client():
+    global _cognito
+    if _cognito is None:
+        _cognito = boto3.client("cognito-idp")
+    return _cognito
+
+def get_dynamodb_resource():
+    global _dynamodb
+    if _dynamodb is None:
+        _dynamodb = boto3.resource("dynamodb")
+    return _dynamodb
 
 CLIENT_ID = os.environ["COGNITO_CLIENT_ID"]
 USER_POOL_ID = os.environ["COGNITO_USER_POOL_ID"]
@@ -19,6 +32,7 @@ CODE_EXPIRATION_MINUTES = int(
 def check_user_exists_in_cognito(email):
     """Check if user exists in Cognito"""
     try:
+        cognito = get_cognito_client()
         cognito.admin_get_user(UserPoolId=USER_POOL_ID, Username=email)
         return True
     except ClientError as e:
@@ -32,6 +46,7 @@ def check_user_exists_in_cognito(email):
 def validate_code_in_dynamodb(email, code):
     """Validate the code against DynamoDB and return validation result"""
     try:
+        dynamodb = get_dynamodb_resource()
         table = dynamodb.Table(DYNAMODB_TABLE_NAME)
         response = table.get_item(Key={"email": email})
 
@@ -115,6 +130,7 @@ def lambda_handler(event, context):
 
         # User exists and code is valid, proceed with custom auth flow
         try:
+            cognito = get_cognito_client()
             auth_response = cognito.initiate_auth(
                 ClientId=CLIENT_ID,
                 AuthFlow="CUSTOM_AUTH",
