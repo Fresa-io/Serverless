@@ -33,7 +33,7 @@ CODE_EXPIRATION_MINUTES = int(
 
 
 def check_user_exists_in_cognito(email):
-    """Check if user exists in Cognito"""
+    """ Check if user exists in Cognito"""
     try:
         cognito = get_cognito_client()
         cognito.admin_get_user(UserPoolId=USER_POOL_ID, Username=email)
