@@ -24,19 +24,28 @@ def get_dynamodb_resource():
     return _dynamodb
 
 
-CLIENT_ID = os.environ["COGNITO_CLIENT_ID"]
-USER_POOL_ID = os.environ["COGNITO_USER_POOL_ID"]
-DYNAMODB_TABLE_NAME = os.environ["DYNAMODB_TABLE_NAME"]
-CODE_EXPIRATION_MINUTES = int(
-    os.environ.get("CODE_EXPIRATION_MINUTES", "5")
-)  # Default 5 minutes
+# Lazy loading of environment variables to avoid KeyError during testing
+def get_client_id():
+    return os.environ["COGNITO_CLIENT_ID"]
+
+
+def get_user_pool_id():
+    return os.environ["COGNITO_USER_POOL_ID"]
+
+
+def get_dynamodb_table_name():
+    return os.environ["DYNAMODB_TABLE_NAME"]
+
+
+def get_code_expiration_minutes():
+    return int(os.environ.get("CODE_EXPIRATION_MINUTES", "5"))
 
 
 def check_user_exists_in_cognito(email):
     """Check if user exists in Cognito"""
     try:
         cognito = get_cognito_client()
-        cognito.admin_get_user(UserPoolId=USER_POOL_ID, Username=email)
+        cognito.admin_get_user(UserPoolId=get_user_pool_id(), Username=email)
         return True
     except ClientError as e:
         if e.response["Error"].get("Code") == "UserNotFoundException":
@@ -50,7 +59,7 @@ def validate_code_in_dynamodb(email, code):
     """Validate the code against DynamoDB and return validation result"""
     try:
         dynamodb = get_dynamodb_resource()
-        table = dynamodb.Table(DYNAMODB_TABLE_NAME)
+        table = dynamodb.Table(get_dynamodb_table_name())
         response = table.get_item(Key={"email": email})
 
         # Check if code record doesn't exist (deleted or never created)
@@ -68,7 +77,7 @@ def validate_code_in_dynamodb(email, code):
         # Check if code has expired based on time
         if last_request_time:
             current_time = int(time.time())
-            expiration_time = last_request_time + (CODE_EXPIRATION_MINUTES * 60)
+            expiration_time = last_request_time + (get_code_expiration_minutes() * 60)
 
             if current_time > expiration_time:
                 return {
@@ -135,14 +144,14 @@ def lambda_handler(event, context):
         try:
             cognito = get_cognito_client()
             auth_response = cognito.initiate_auth(
-                ClientId=CLIENT_ID,
+                ClientId=get_client_id(),
                 AuthFlow="CUSTOM_AUTH",
                 AuthParameters={"USERNAME": email},
             )
 
             # Respond to challenge
             challenge_response = cognito.respond_to_auth_challenge(
-                ClientId=CLIENT_ID,
+                ClientId=get_client_id(),
                 ChallengeName="CUSTOM_CHALLENGE",
                 Session=auth_response["Session"],
                 ChallengeResponses={"USERNAME": email, "ANSWER": code},
