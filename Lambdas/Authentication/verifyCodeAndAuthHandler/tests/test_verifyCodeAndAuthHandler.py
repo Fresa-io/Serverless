@@ -31,6 +31,7 @@ class TestVerifyCodeAndAuthHandler(unittest.TestCase):
                 "COGNITO_USER_POOL_ID": "test-user-pool",
                 "DYNAMODB_TABLE_NAME": "test-table",
                 "CODE_EXPIRATION_MINUTES": "5",
+                "AWS_REGION": "us-east-1",
             },
         )
         self.env_patcher.start()
