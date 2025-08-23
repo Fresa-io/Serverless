@@ -13,13 +13,6 @@ on:
       - "app.py"
       - "requirements.txt"
       - ".github/workflows/**"
-    # Exclude documentation and non-functional changes
-    paths-ignore:
-      - "**.md"
-      - "**.txt"
-      - ".gitignore"
-      - "Dockerfile"
-      - "entrypoint*.sh"
   workflow_dispatch:
     inputs:
       environment:
