@@ -27,7 +27,7 @@ This single command handles:
 
 ## 📋 Quick Setup (2 Steps)
 
-### Step 1: Build the Docker Image (One Time Setup)
+### Step 1: Build the Docker Image (One Time Setup).
 
 ```bash
 docker build -t app .
