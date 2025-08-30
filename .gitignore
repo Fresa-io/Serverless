@@ -93,3 +93,12 @@ luis.pub
 id_rsa*
 *.pem
 *.key
+
+# SSH Private Keys
+*.pem
+*.key
+id_rsa
+id_ed25519
+id_ecdsa
+ssh_host_*
+*.ppk
