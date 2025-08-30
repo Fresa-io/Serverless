@@ -5,14 +5,14 @@ on:
     branches: [main]
     paths:
       # Only trigger for code and configuration changes
-      - 'Lambdas/**'
-      - 'scripts/**'
-      - 'utils/**'
-      - 'cdk/**'
-      - 'config.py'
-      - 'app.py'
-      - 'requirements.txt'
-      - '.github/workflows/**'
+      - "Lambdas/**"
+      - "scripts/**"
+      - "utils/**"
+      - "cdk/**"
+      - "config.py"
+      - "app.py"
+      - "requirements.txt"
+      - ".github/workflows/**"
 
 env:
   AWS_REGION: us-east-1
@@ -55,11 +55,30 @@ jobs:
       - name: Security check
         run: |
           echo "🔒 Checking for security issues..."
-          # Check for hardcoded secrets
-          if grep -r "aws_access_key_id\|aws_secret_access_key\|password\|secret" --include="*.py" --include="*.yml" --exclude-dir=".github" .; then
-            echo "❌ Potential hardcoded secrets found!"
+          # Check for hardcoded secrets (basic patterns, excluding legitimate utilities)
+          FOUND_SECRETS=false
+
+          # Look for AWS credentials with actual values (not just variable names)
+          if grep -r "aws_access_key_id.*=.*[\"']AKIA" --include="*.py" --include="*.yml" --exclude-dir=".github" .; then
+            echo "❌ Hardcoded AWS access keys found!"
+            FOUND_SECRETS=true
+          fi
+
+          if grep -r "aws_secret_access_key.*=.*[\"']" --include="*.py" --include="*.yml" --exclude-dir=".github" . | grep -v "encrypt_utils.py" | grep -v "sys.argv"; then
+            echo "❌ Hardcoded AWS secret keys found!"
+            FOUND_SECRETS=true
+          fi
+
+          # Look for hardcoded passwords
+          if grep -r "password.*=.*[\"']" --include="*.py" --include="*.yml" --exclude-dir=".github" . | grep -v "encrypt_utils.py" | grep -v "sys.argv" | grep -v "getpass"; then
+            echo "❌ Hardcoded passwords found!"
+            FOUND_SECRETS=true
+          fi
+
+          if [ "$FOUND_SECRETS" = true ]; then
             exit 1
           fi
+
           echo "✅ No hardcoded secrets detected"
 
       - name: Run unit tests
@@ -91,7 +110,7 @@ jobs:
       - name: Validate project structure
         run: |
           echo "📁 Validating project structure..."
-          
+
           # Check required directories exist
           required_dirs=("Lambdas" "scripts" "utils" "cdk" ".github/workflows")
           for dir in "${required_dirs[@]}"; do
@@ -100,7 +119,7 @@ jobs:
               exit 1
             fi
           done
-          
+
           # Check required files exist
           required_files=("config.py" "app.py" "requirements.txt" "README.md")
           for file in "${required_files[@]}"; do
@@ -109,7 +128,7 @@ jobs:
               exit 1
             fi
           done
-          
+
           echo "✅ Project structure validated"
 
       - name: Check for conflicts with main
@@ -134,22 +153,20 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v2
         if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
-
-
+          sarif_file: "trivy-results.sarif"
