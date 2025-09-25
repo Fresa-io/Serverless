@@ -6,8 +6,26 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(os.environ["DYNAMODB_TABLE_NAME"])
+# Initialize DynamoDB lazily to avoid issues during testing
+_dynamodb = None
+_table = None
+
+
+def get_dynamodb_resource():
+    """Get DynamoDB resource with lazy initialization"""
+    global _dynamodb
+    if _dynamodb is None:
+        _dynamodb = boto3.resource("dynamodb")
+    return _dynamodb
+
+
+def get_table():
+    """Get DynamoDB table with lazy initialization"""
+    global _table
+    if _table is None:
+        dynamodb = get_dynamodb_resource()
+        _table = dynamodb.Table(os.environ["DYNAMODB_TABLE_NAME"])
+    return _table
 
 
 def lambda_handler(event, context):
@@ -24,6 +42,7 @@ def lambda_handler(event, context):
             raise ValueError("Email not found in user attributes")
 
         # Retrieve code from DynamoDB
+        table = get_table()
         item = table.get_item(Key={"email": email}).get("Item", {})
         code = item.get("code", "")
 

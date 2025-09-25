@@ -5,21 +5,49 @@ import time
 from json import JSONDecodeError
 from botocore.exceptions import ClientError
 
-cognito = boto3.client("cognito-idp")
-dynamodb = boto3.resource("dynamodb")
+# Initialize AWS services lazily to avoid issues during testing
+_cognito = None
+_dynamodb = None
 
-CLIENT_ID = os.environ["COGNITO_CLIENT_ID"]
-USER_POOL_ID = os.environ["COGNITO_USER_POOL_ID"]
-DYNAMODB_TABLE_NAME = os.environ["DYNAMODB_TABLE_NAME"]
-CODE_EXPIRATION_MINUTES = int(
-    os.environ.get("CODE_EXPIRATION_MINUTES", "5")
-)  # Default 5 minutes
+
+def get_cognito_client():
+    """Get Cognito client with lazy initialization"""
+    global _cognito
+    if _cognito is None:
+        _cognito = boto3.client("cognito-idp")
+    return _cognito
+
+
+def get_dynamodb_resource():
+    """Get DynamoDB resource with lazy initialization"""
+    global _dynamodb
+    if _dynamodb is None:
+        _dynamodb = boto3.resource("dynamodb")
+    return _dynamodb
+
+
+# Lazy loading of environment variables to avoid KeyError during testing
+def get_client_id():
+    return os.environ["COGNITO_CLIENT_ID"]
+
+
+def get_user_pool_id():
+    return os.environ["COGNITO_USER_POOL_ID"]
+
+
+def get_dynamodb_table_name():
+    return os.environ["DYNAMODB_TABLE_NAME"]
+
+
+def get_code_expiration_minutes():
+    return int(os.environ.get("CODE_EXPIRATION_MINUTES", "5"))
 
 
 def check_user_exists_in_cognito(email):
     """Check if user exists in Cognito"""
     try:
-        cognito.admin_get_user(UserPoolId=USER_POOL_ID, Username=email)
+        cognito = get_cognito_client()
+        cognito.admin_get_user(UserPoolId=get_user_pool_id(), Username=email)
         return True
     except ClientError as e:
         if e.response["Error"].get("Code") == "UserNotFoundException":

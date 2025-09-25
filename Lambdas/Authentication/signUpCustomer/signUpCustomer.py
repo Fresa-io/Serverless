@@ -6,8 +6,16 @@ import os
 import time
 from botocore.exceptions import ClientError
 
-# Initialize DynamoDB resource
-dynamodb = boto3.resource("dynamodb")
+# Initialize DynamoDB resource lazily to avoid issues during testing
+_dynamodb = None
+
+
+def get_dynamodb_resource():
+    """Get DynamoDB resource with lazy initialization"""
+    global _dynamodb
+    if _dynamodb is None:
+        _dynamodb = boto3.resource("dynamodb")
+    return _dynamodb
 
 
 # Generate a secure random password
@@ -50,6 +58,7 @@ def validate_verification_code(email, user_code):
             print("DYNAMODB_TABLE_NAME environment variable not set")
             return False, "Configuration error"
 
+        dynamodb = get_dynamodb_resource()
         table = dynamodb.Table(table_name)
         code_expiration_minutes = int(os.environ.get("CODE_EXPIRATION_MINUTES", "10"))
 
