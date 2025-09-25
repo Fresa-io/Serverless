@@ -60,7 +60,8 @@ def check_user_exists_in_cognito(email):
 def validate_code_in_dynamodb(email, code):
     """Validate the code against DynamoDB and return validation result"""
     try:
-        table = dynamodb.Table(DYNAMODB_TABLE_NAME)
+        dynamodb = get_dynamodb_resource()
+        table = dynamodb.Table(get_dynamodb_table_name())
         response = table.get_item(Key={"email": email})
 
         # Check if code record doesn't exist (deleted or never created)
@@ -78,7 +79,7 @@ def validate_code_in_dynamodb(email, code):
         # Check if code has expired based on time
         if last_request_time:
             current_time = int(time.time())
-            expiration_time = last_request_time + (CODE_EXPIRATION_MINUTES * 60)
+            expiration_time = last_request_time + (get_code_expiration_minutes() * 60)
 
             if current_time > expiration_time:
                 return {
@@ -143,15 +144,16 @@ def lambda_handler(event, context):
 
         # User exists and code is valid, proceed with custom auth flow
         try:
+            cognito = get_cognito_client()
             auth_response = cognito.initiate_auth(
-                ClientId=CLIENT_ID,
+                ClientId=get_client_id(),
                 AuthFlow="CUSTOM_AUTH",
                 AuthParameters={"USERNAME": email},
             )
 
             # Respond to challenge
             challenge_response = cognito.respond_to_auth_challenge(
-                ClientId=CLIENT_ID,
+                ClientId=get_client_id(),
                 ChallengeName="CUSTOM_CHALLENGE",
                 Session=auth_response["Session"],
                 ChallengeResponses={"USERNAME": email, "ANSWER": code},
