@@ -1,0 +1,4 @@
+{
+  "httpMethod": "POST",
+  "body": "{\"test\": \"data\", \"function\": \"identity_provider_auth\"}"
+}

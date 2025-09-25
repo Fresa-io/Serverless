@@ -2,20 +2,31 @@
 
 A comprehensive Lambda deployment system with alias management, local testing, and interactive deployment workflows
 
-## 🎯 The Magic: One Command Does Everything
+## 🎯 The Magic: Multiple Ways to Create Lambda Functions
 
-**Just run this one command for everything:**
+**Option 1: Updated CLI Script (Recommended)**
 
 ```bash
-docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
+./run_updated_cli.sh QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
 ```
 
-This single command handles:
+**Option 2: Interactive Lambda Creator**
 
+```bash
+python3 create_lambda.py
+```
+
+**Option 3: Direct Command Line**
+
+```bash
+python3 scripts/add_lambda_function.py <function_name> <category>
+```
+
+These commands handle:
+
+- ✅ Lambda function creation
 - ✅ Local testing
 - ✅ Unit tests
-- ✅ Deployment to STAGING
-- ✅ Deployment to PROD
 - ✅ Status checks
 - ✅ Everything else
 
@@ -25,28 +36,38 @@ This single command handles:
 1. 🧪 Local Testing (DEV) → 2. 📋 Code Review → 3. 🚀 STAGING → 4. ✅ Approval → 5. 🚀 PROD
 ```
 
-## 📋 Quick Setup (2 Steps)
+## 📋 Quick Setup (Multiple Options)
 
-### Step 1: Build the Docker Image (One Time Setup).
+### Option 1: Updated CLI Script (Recommended)
 
 ```bash
+# Use the updated CLI script that bypasses Docker registry issues
+./run_updated_cli.sh <your-credentials>
+```
+
+### Option 2: Interactive Lambda Creator
+
+```bash
+# Use the interactive Python script
+python3 create_lambda.py
+```
+
+### Option 3: Direct Command Line
+
+```bash
+# Create functions directly
+python3 scripts/add_lambda_function.py <function_name> <category>
+```
+
+### Option 4: Docker (If Registry Issues Resolved)
+
+```bash
+# Build and run Docker (if registry authentication works)
 docker build -t app .
+docker run --rm -it app deploy <your-credentials>
 ```
 
-### Step 2: That's It! You're Ready
-
-Everything else is handled by the single command. The system will:
-
-- ✅ Check AWS credentials automatically
-- ✅ Setup aliases if needed
-- ✅ Guide you through all options
-- ✅ Handle all deployments
-
-**Just run this one command for everything:**
-
-```bash
-docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
-```
+**Note:** Docker registry authentication issues may prevent building. Use the alternative methods above.
 
 ## 📁 Project Structure
 
@@ -129,6 +150,7 @@ git push origin main
 When you push to `main`, GitHub Actions automatically:
 
 1. **Code Quality Checks**
+
    - ✅ Linting with flake8
    - ✅ Code formatting with black
    - ✅ Unit tests for each function
@@ -142,6 +164,7 @@ When you push to `main`, GitHub Actions automatically:
 ### Phase 3: Production Deployment
 
 1. **Test in STAGING**
+
    - Verify everything works in staging environment
    - Check logs and metrics in AWS Console
 
@@ -154,16 +177,15 @@ When you push to `main`, GitHub Actions automatically:
 
 ## 🆕 Creating New Lambda Functions
 
-### Easy Function Creation
+### Method 1: Updated CLI Script (Recommended)
 
-The simplest way to add a new Lambda function is through the **interactive Docker menu**:
+1. **Run the updated CLI:**
 
-1. **Start the container:**
    ```bash
-   docker run --rm -it app deploy <your-credentials>
+   ./run_updated_cli.sh <your-credentials>
    ```
 
-2. **Select option 9:** `🆕 Create New Lambda Function`
+2. **Select option 5:** `🆕 Create New Lambda Function`
 
 3. **Follow the prompts:**
    - Enter function name (e.g., `userLogin`, `processPayment`)
@@ -175,21 +197,41 @@ The simplest way to add a new Lambda function is through the **interactive Docke
      - **General** - default category
      - **Custom** - create your own category
 
-4. **Done!** Your function is automatically:
-   - ✅ Created with proper folder structure
-   - ✅ Added to configuration files
-   - ✅ Ready for local testing
-   - ✅ Available in all menus instantly
-   - ✅ **Ready for CI/CD deployment when pushed to GitHub**
-
-### Alternative: Command Line
-
-You can also create functions directly via command line:
+### Method 2: Interactive Lambda Creator
 
 ```bash
-# Inside the container or locally:
-python3 scripts/add_lambda_function.py myFunction CategoryName
+python3 create_lambda.py
 ```
+
+This provides a user-friendly interface that guides you through:
+
+- Function name validation
+- Category selection
+- Confirmation before creation
+
+### Method 3: Direct Command Line
+
+```bash
+python3 scripts/add_lambda_function.py <function_name> <category>
+```
+
+**Examples:**
+
+```bash
+python3 scripts/add_lambda_function.py userLogin Authentication
+python3 scripts/add_lambda_function.py dataProcessor Processing
+python3 scripts/add_lambda_function.py sendNotification Communication
+```
+
+### What Gets Created
+
+Your function is automatically:
+
+- ✅ Created with proper folder structure
+- ✅ Added to configuration files
+- ✅ Ready for local testing
+- ✅ Available in all menus instantly
+- ✅ **Ready for CI/CD deployment when pushed to GitHub**
 
 ### What Gets Created
 
@@ -208,12 +250,17 @@ Lambdas/CategoryName/functionName/
 ### Complete Development Workflow
 
 ```bash
-# 1. Create function via Docker menu
-docker run --rm -it app deploy <credentials>  # Option 5: Create New Lambda Function
+# 1. Create function using any method:
+./run_updated_cli.sh <credentials>  # Option 5: Create New Lambda Function
+# OR
+python3 create_lambda.py
+# OR
+python3 scripts/add_lambda_function.py myFunction CategoryName
 
 # 2. Test locally
-# Option 2: Test Function Locally
-# Option 3: Run Unit Tests
+./run_updated_cli.sh <credentials>  # Option 2: Test Function Locally
+# OR
+python3 scripts/local_test.py test <function_name>
 
 # 3. Create feature branch and deploy via Pull Request
 git checkout -b feature/my-new-function
@@ -252,6 +299,7 @@ git push origin feature/my-new-function
 ### Smart Deployment Logic:
 
 #### **What Triggers Deployment:**
+
 - Changes to Lambda function code (`Lambdas/**`)
 - Changes to deployment scripts (`scripts/**`, `utils/**`)
 - Changes to infrastructure (`cdk/**`, `config.py`, `app.py`)
@@ -259,6 +307,7 @@ git push origin feature/my-new-function
 - Changes to workflows (`.github/workflows/**`)
 
 #### **What Skips Deployment:**
+
 - Documentation changes (`**.md`)
 - README updates
 - Dockerfile modifications
@@ -266,6 +315,7 @@ git push origin feature/my-new-function
 - Non-functional file updates
 
 #### **Additional Protection:**
+
 - Even when deployment runs, individual Lambda functions are only updated if their **code SHA256 hash changed**
 - This prevents unnecessary version bumps when only dependencies or infrastructure change
 
@@ -288,8 +338,12 @@ git push origin feature/my-new-function
 **3. Local testing fails**
 
 ```bash
-# Just run the single command - it handles everything
-docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
+# Use the updated CLI script
+./run_updated_cli.sh <your-credentials>
+# OR use the interactive creator
+python3 create_lambda.py
+# OR use direct command line
+python3 scripts/add_lambda_function.py <function_name> <category>
 ```
 
 **4. GitHub Actions failing**
@@ -302,10 +356,12 @@ docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEc
 ### Quick Setup:
 
 1. **Configure Repository Secrets:**
+
    - Go to GitHub repository → **Settings** → **Secrets and variables** → **Actions**
    - Add: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 
 2. **Configure Branch Protection:**
+
    - Go to **Settings** → **Branches**
    - Add rule for `main` branch
    - Enable: "Require a pull request before merging"
@@ -313,13 +369,15 @@ docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEc
    - Add required checks: `Validate Pull Request / validate-pr` and `Validate Pull Request / security-scan`
 
 3. **Configure Environments:**
+
    - Go to **Settings** → **Environments**
    - Create: `production` environment (staging uses no protection)
    - Set production to require reviewers
 
 4. **Done!** Your CI/CD pipeline is ready.
 
-📋 **Full setup guides:** 
+📋 **Full setup guides:**
+
 - [GitHub Actions Setup](.github/SETUP.md)
 - [Branch Protection Setup](.github/BRANCH_PROTECTION_SETUP.md)
 - Verify AWS credentials have proper permissions
@@ -330,9 +388,12 @@ docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEc
 ### Check Deployment Status
 
 ```bash
-# Just run the single command
-docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
+# Use the updated CLI script
+./run_updated_cli.sh <your-credentials>
 # Then select: 1) 🔍 Show Deployment Status
+
+# OR check status directly
+python3 scripts/deploy_with_aliases.py status
 ```
 
 ## 🎉 Summary
@@ -346,8 +407,15 @@ Your deployment system provides:
 - **🛡️ Reliability**: Version history and rollback capability
 - **🎮 Single Command**: Just one command to start everything
 
-**Ready to start?** Run this command:
+**Ready to start?** Choose your preferred method:
 
 ```bash
-docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
+# Option 1: Updated CLI Script (Recommended)
+./run_updated_cli.sh <your-credentials>
+
+# Option 2: Interactive Lambda Creator
+python3 create_lambda.py
+
+# Option 3: Direct Command Line
+python3 scripts/add_lambda_function.py <function_name> <category>
 ```
