@@ -18,7 +18,7 @@ show_usage() {
     echo "  • And much more!"
     echo ""
     echo "Example:"
-    echo "  docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE="
+    echo "  docker run --rm -it app deploy YOUR_BASE64_ENCODED_CREDENTIALS"
     echo ""
     echo "Advanced Commands (for power users):"
     echo "  docker run --rm app hash <access_key> <secret_key> <region>"
@@ -413,7 +413,7 @@ case "$1" in
             echo "  docker run --rm -it app deploy <encrypted_credentials>"
             echo ""
             echo "Example:"
-            echo "  docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE="
+            echo "  docker run --rm -it app deploy YOUR_BASE64_ENCODED_CREDENTIALS"
             exit 1
         fi
         

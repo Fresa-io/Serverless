@@ -7,7 +7,7 @@ A comprehensive Lambda deployment system with alias management, local testing, a
 **Option 1: Updated CLI Script (Recommended)**
 
 ```bash
-./run_updated_cli.sh QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
+./run_updated_cli.sh YOUR_BASE64_ENCODED_CREDENTIALS
 ```
 
 **Option 2: Interactive Lambda Creator**
@@ -122,7 +122,7 @@ Enter your choice (1-7):
 
 ```bash
 # Start the interactive deployment system
-docker run --rm -it app deploy QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE=
+docker run --rm -it app deploy YOUR_BASE64_ENCODED_CREDENTIALS
 ```
 
 **That's it!** The interactive menu focuses on development and testing:

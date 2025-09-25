@@ -19,7 +19,7 @@ if [ $# -eq 0 ]; then
     echo "Usage: ./run_updated_cli.sh <encrypted_credentials>"
     echo ""
     echo "Example:"
-    echo "  ./run_updated_cli.sh QUtJQVRZRENYVFVWTEdTQTZITUs6T2luVnVFem9CelN4UXpEcm45S3ZZeXRScG9ManpnT2JZUGFBMktuQzp1cy1lYXN0LTE="
+    echo "  ./run_updated_cli.sh YOUR_BASE64_ENCODED_CREDENTIALS"
     exit 1
 fi
 
