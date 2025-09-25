@@ -5,9 +5,31 @@ import time
 from datetime import datetime, timezone
 from botocore.exceptions import ClientError
 
-dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(os.environ["DYNAMODB_TABLE_NAME"])
-CODE_EXPIRATION_MINUTES = int(os.environ.get("CODE_EXPIRATION_MINUTES", "10"))
+# Initialize DynamoDB lazily to avoid issues during testing
+_dynamodb = None
+_table = None
+
+
+def get_dynamodb_resource():
+    """Get DynamoDB resource with lazy initialization"""
+    global _dynamodb
+    if _dynamodb is None:
+        _dynamodb = boto3.resource("dynamodb")
+    return _dynamodb
+
+
+def get_table():
+    """Get DynamoDB table with lazy initialization"""
+    global _table
+    if _table is None:
+        dynamodb = get_dynamodb_resource()
+        _table = dynamodb.Table(os.environ["DYNAMODB_TABLE_NAME"])
+    return _table
+
+
+def get_code_expiration_minutes():
+    """Get code expiration minutes with lazy initialization"""
+    return int(os.environ.get("CODE_EXPIRATION_MINUTES", "10"))
 
 
 def lambda_handler(event, context):
@@ -24,6 +46,7 @@ def lambda_handler(event, context):
 
         # Get stored code and lastRequestTime from DynamoDB
         try:
+            table = get_table()
             response = table.get_item(Key={"email": username.lower()})
 
             if "Item" not in response:
@@ -39,7 +62,7 @@ def lambda_handler(event, context):
             # Check if code has expired
             if last_request_time:
                 current_time = int(time.time())
-                expiration_time = last_request_time + (CODE_EXPIRATION_MINUTES * 60)
+                expiration_time = last_request_time + (get_code_expiration_minutes() * 60)
 
                 if current_time > expiration_time:
                     print(
