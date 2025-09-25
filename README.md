@@ -4,7 +4,24 @@ A comprehensive Lambda deployment system with alias management, local testing, a
 
 ## 🎯 The Magic: Multiple Ways to Create Lambda Functions
 
-**Option 1: Updated CLI Script (Recommended)**
+### 🔐 Local Development Setup
+
+For your local development environment, I've created secure credential files:
+
+- `local_credentials.sh` - Contains your actual AWS credentials (in .gitignore)
+- `run_local.sh` - Quick script to run with your credentials
+- `.gitignore` - Updated to prevent credential exposure
+
+**Never commit `local_credentials.sh` to git!** It's automatically ignored.
+
+**Option 1: Local Development (Your Environment)**
+
+```bash
+# Quick start with your local credentials
+./run_local.sh
+```
+
+**Option 2: Updated CLI Script (Manual)**
 
 ```bash
 ./run_updated_cli.sh YOUR_BASE64_ENCODED_CREDENTIALS
