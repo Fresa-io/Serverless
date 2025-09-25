@@ -12,16 +12,34 @@ dynamodb = boto3.resource("dynamodb")
 
 # Generate a secure random password
 def generate_random_password(length=16):
-    characters = string.ascii_letters + string.digits + "!@#$%^&*"
-    while True:
-        password = "".join(secrets.choice(characters) for i in range(length))
-        if (
-            any(c.isupper() for c in password)
-            and any(c.islower() for c in password)
-            and any(c.isdigit() for c in password)
-            and any(c in "!@#$%^&*" for c in password)
-        ):
-            return password
+    """Generate a secure random password using cryptographically secure methods"""
+    # Use environment variable for password complexity if available
+    min_length = int(os.environ.get("MIN_PASSWORD_LENGTH", "16"))
+    length = max(length, min_length)
+
+    # Define character sets for password complexity
+    uppercase = string.ascii_uppercase
+    lowercase = string.ascii_lowercase
+    digits = string.digits
+    special_chars = "!@#$%^&*"
+    all_chars = uppercase + lowercase + digits + special_chars
+
+    # Ensure at least one character from each set
+    password_chars = [
+        secrets.choice(uppercase),
+        secrets.choice(lowercase),
+        secrets.choice(digits),
+        secrets.choice(special_chars),
+    ]
+
+    # Fill the rest with random characters
+    for _ in range(length - 4):
+        password_chars.append(secrets.choice(all_chars))
+
+    # Shuffle the password characters
+    secrets.SystemRandom().shuffle(password_chars)
+
+    return "".join(password_chars)
 
 
 def validate_verification_code(email, user_code):
