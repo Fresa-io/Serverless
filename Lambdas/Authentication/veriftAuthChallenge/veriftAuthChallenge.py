@@ -62,7 +62,9 @@ def lambda_handler(event, context):
             # Check if code has expired
             if last_request_time:
                 current_time = int(time.time())
-                expiration_time = last_request_time + (get_code_expiration_minutes() * 60)
+                expiration_time = last_request_time + (
+                    get_code_expiration_minutes() * 60
+                )
 
                 if current_time > expiration_time:
                     print(
