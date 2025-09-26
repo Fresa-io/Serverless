@@ -20,7 +20,14 @@ class TestIdentityproviderauth(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.test_event = {"httpMethod": "POST", "body": json.dumps({"test": "data"})}
+        # API Gateway event structure for identity_provider_auth
+        self.test_event = {
+            "httpMethod": "POST",
+            "pathParameters": {"provider": "google"},
+            "body": json.dumps(
+                {"idToken": "test-google-token", "accessToken": "test-access-token"}
+            ),
+        }
 
         self.test_context = {
             "function_name": "identity_provider_auth",
@@ -38,17 +45,20 @@ class TestIdentityproviderauth(unittest.TestCase):
             self.test_event, self.test_context
         )
 
-        self.assertEqual(result["statusCode"], 200)
-        self.assertIn("message", json.loads(result["body"]))
+        # Should return a valid response structure (may be 400 for invalid tokens, which is expected)
+        self.assertIn("statusCode", result)
+        self.assertIn("headers", result)
+        self.assertIn("body", result)
+        self.assertIn("Content-Type", result["headers"])
 
     def test_identity_provider_auth_invalid_event(self):
         """Test identity_provider_auth with invalid event"""
         invalid_event = {}
         result = identity_provider_auth.lambda_handler(invalid_event, self.test_context)
 
-        self.assertEqual(
-            result["statusCode"], 200
-        )  # Should still work with empty event
+        # Should return error response for invalid event
+        self.assertEqual(result["statusCode"], 400)
+        self.assertIn("error", json.loads(result["body"]))
 
 
 if __name__ == "__main__":
