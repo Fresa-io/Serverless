@@ -34,9 +34,7 @@ class TestVerifyauthchallenge(unittest.TestCase):
 
     def test_verifyAuthChallenge_success(self):
         """Test successful verifyAuthChallenge execution"""
-        result = verifyAuthChallenge.verifyAuthChallenge(
-            self.test_event, self.test_context
-        )
+        result = verifyAuthChallenge.lambda_handler(self.test_event, self.test_context)
 
         self.assertEqual(result["statusCode"], 200)
         self.assertIn("message", json.loads(result["body"]))
@@ -44,9 +42,7 @@ class TestVerifyauthchallenge(unittest.TestCase):
     def test_verifyAuthChallenge_invalid_event(self):
         """Test verifyAuthChallenge with invalid event"""
         invalid_event = {}
-        result = verifyAuthChallenge.verifyAuthChallenge(
-            invalid_event, self.test_context
-        )
+        result = verifyAuthChallenge.lambda_handler(invalid_event, self.test_context)
 
         self.assertEqual(
             result["statusCode"], 200
