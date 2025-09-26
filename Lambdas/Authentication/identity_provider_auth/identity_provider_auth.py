@@ -11,15 +11,34 @@ from botocore.exceptions import ClientError
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Initialize AWS services
-cognito = boto3.client("cognito-idp")
+# Initialize AWS services lazily to avoid issues during testing
+_cognito = None
+_http = None
 
-# Initialize urllib3
-http = urllib3.PoolManager()
 
-# Environment variables
-CLIENT_ID = os.environ["COGNITO_CLIENT_ID"]
-USER_POOL_ID = os.environ["COGNITO_USER_POOL_ID"]
+def get_cognito_client():
+    """Get Cognito client with lazy initialization"""
+    global _cognito
+    if _cognito is None:
+        _cognito = boto3.client("cognito-idp")
+    return _cognito
+
+
+def get_http_pool():
+    """Get HTTP pool with lazy initialization"""
+    global _http
+    if _http is None:
+        _http = urllib3.PoolManager()
+    return _http
+
+
+# Lazy loading of environment variables to avoid KeyError during testing
+def get_client_id():
+    return os.environ["COGNITO_CLIENT_ID"]
+
+
+def get_user_pool_id():
+    return os.environ["COGNITO_USER_POOL_ID"]
 
 
 def verify_google_token(id_token_string):
@@ -27,6 +46,7 @@ def verify_google_token(id_token_string):
     logger.info("Starting Google token verification")
     try:
         url = f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token_string}"
+        http = get_http_pool()
         response = http.request("GET", url)
         if response.status != 200:
             return {"success": False, "error": "Invalid Google token"}
@@ -55,6 +75,7 @@ def verify_facebook_token(access_token):
     logger.info("Starting Facebook token verification")
     try:
         url = f"https://graph.facebook.com/me?fields=id,email,first_name,last_name,picture&access_token={access_token}"
+        http = get_http_pool()
         response = http.request("GET", url)
         if response.status != 200:
             return {"success": False, "error": "Invalid Facebook token"}
@@ -114,8 +135,9 @@ def authenticate_social_user_with_cognito(email):
         temp_password = generate_random_password()
 
         # Set the temporary password
+        cognito = get_cognito_client()
         cognito.admin_set_user_password(
-            UserPoolId=USER_POOL_ID,
+            UserPoolId=get_user_pool_id(),
             Username=email,
             Password=temp_password,
             Permanent=True,
@@ -123,8 +145,8 @@ def authenticate_social_user_with_cognito(email):
 
         # Now authenticate with the temporary password
         auth_response = cognito.admin_initiate_auth(
-            UserPoolId=USER_POOL_ID,
-            ClientId=CLIENT_ID,
+            UserPoolId=get_user_pool_id(),
+            ClientId=get_client_id(),
             AuthFlow="ADMIN_NO_SRP_AUTH",
             AuthParameters={"USERNAME": email, "PASSWORD": temp_password},
         )
@@ -188,8 +210,9 @@ def lambda_handler(event, context):
 
         # Check if the user exists in Cognito
         try:
+            cognito = get_cognito_client()
             user_details = cognito.admin_get_user(
-                UserPoolId=USER_POOL_ID, Username=email
+                UserPoolId=get_user_pool_id(), Username=email
             )
             logger.info(f"User {email} found in Cognito. Authenticating...")
 
