@@ -40,6 +40,7 @@ def get_ses_from_email_address():
 def get_ses_verification_template_name():
     return os.environ.get("SES_VERIFICATION_TEMPLATE_NAME")
 
+
 CODE_EXPIRATION_MINUTES = 10
 
 # Cooldown configurations
