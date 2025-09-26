@@ -5,17 +5,40 @@ import random
 import time
 from datetime import datetime, timedelta, timezone
 
-# Initialize AWS clients with configured region
-AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
-dynamodb_client = boto3.client("dynamodb", region_name=AWS_REGION)
-ses_client = boto3.client("ses", region_name=AWS_REGION)
+# Initialize AWS clients lazily to avoid issues during testing
+_dynamodb_client = None
+_ses_client = None
 
-# Environment Variables with validation
-REQUIRED_ENV_VARS = {
-    "DYNAMODB_TABLE_NAME": os.environ.get("DYNAMODB_TABLE_NAME"),
-    "SES_FROM_EMAIL_ADDRESS": os.environ.get("SES_FROM_EMAIL_ADDRESS"),
-    "SES_VERIFICATION_TEMPLATE_NAME": os.environ.get("SES_VERIFICATION_TEMPLATE_NAME"),
-}
+
+def get_dynamodb_client():
+    """Get DynamoDB client with lazy initialization"""
+    global _dynamodb_client
+    if _dynamodb_client is None:
+        aws_region = os.environ.get("AWS_REGION", "us-east-1")
+        _dynamodb_client = boto3.client("dynamodb", region_name=aws_region)
+    return _dynamodb_client
+
+
+def get_ses_client():
+    """Get SES client with lazy initialization"""
+    global _ses_client
+    if _ses_client is None:
+        aws_region = os.environ.get("AWS_REGION", "us-east-1")
+        _ses_client = boto3.client("ses", region_name=aws_region)
+    return _ses_client
+
+
+# Lazy loading of environment variables to avoid KeyError during testing
+def get_dynamodb_table_name():
+    return os.environ.get("DYNAMODB_TABLE_NAME")
+
+
+def get_ses_from_email_address():
+    return os.environ.get("SES_FROM_EMAIL_ADDRESS")
+
+
+def get_ses_verification_template_name():
+    return os.environ.get("SES_VERIFICATION_TEMPLATE_NAME")
 
 CODE_EXPIRATION_MINUTES = 10
 
@@ -35,7 +58,12 @@ def generate_verification_code(length=6):
 
 def validate_environment():
     """Validate all required environment variables are set"""
-    missing = [var for var, val in REQUIRED_ENV_VARS.items() if not val]
+    required_vars = {
+        "DYNAMODB_TABLE_NAME": get_dynamodb_table_name(),
+        "SES_FROM_EMAIL_ADDRESS": get_ses_from_email_address(),
+        "SES_VERIFICATION_TEMPLATE_NAME": get_ses_verification_template_name(),
+    }
+    missing = [var for var, val in required_vars.items() if not val]
     if missing:
         raise EnvironmentError(
             f"Missing required environment variables: {', '.join(missing)}"

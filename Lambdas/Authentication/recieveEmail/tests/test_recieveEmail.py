@@ -20,6 +20,12 @@ class TestRecieveemail(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
+        # Set required environment variables for testing
+        os.environ["DYNAMODB_TABLE_NAME"] = "test-verification-codes"
+        os.environ["SES_FROM_EMAIL_ADDRESS"] = "test@example.com"
+        os.environ["SES_VERIFICATION_TEMPLATE_NAME"] = "TestVerificationTemplate"
+        os.environ["AWS_REGION"] = "us-east-1"
+
         self.test_event = {"httpMethod": "POST", "body": json.dumps({"test": "data"})}
 
         self.test_context = {
