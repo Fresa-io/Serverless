@@ -34,7 +34,7 @@ class TestRecieveemail(unittest.TestCase):
 
     def test_recieveEmail_success(self):
         """Test successful recieveEmail execution"""
-        result = recieveEmail.recieveEmail(self.test_event, self.test_context)
+        result = recieveEmail.lambda_handler(self.test_event, self.test_context)
 
         self.assertEqual(result["statusCode"], 200)
         self.assertIn("message", json.loads(result["body"]))
@@ -42,7 +42,7 @@ class TestRecieveemail(unittest.TestCase):
     def test_recieveEmail_invalid_event(self):
         """Test recieveEmail with invalid event"""
         invalid_event = {}
-        result = recieveEmail.recieveEmail(invalid_event, self.test_context)
+        result = recieveEmail.lambda_handler(invalid_event, self.test_context)
 
         self.assertEqual(
             result["statusCode"], 200
