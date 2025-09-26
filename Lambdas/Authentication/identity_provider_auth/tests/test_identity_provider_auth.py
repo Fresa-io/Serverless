@@ -34,7 +34,7 @@ class TestIdentityproviderauth(unittest.TestCase):
 
     def test_identity_provider_auth_success(self):
         """Test successful identity_provider_auth execution"""
-        result = identity_provider_auth.identity_provider_auth(
+        result = identity_provider_auth.lambda_handler(
             self.test_event, self.test_context
         )
 
@@ -44,9 +44,7 @@ class TestIdentityproviderauth(unittest.TestCase):
     def test_identity_provider_auth_invalid_event(self):
         """Test identity_provider_auth with invalid event"""
         invalid_event = {}
-        result = identity_provider_auth.identity_provider_auth(
-            invalid_event, self.test_context
-        )
+        result = identity_provider_auth.lambda_handler(invalid_event, self.test_context)
 
         self.assertEqual(
             result["statusCode"], 200
