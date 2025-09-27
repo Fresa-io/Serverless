@@ -27,17 +27,19 @@ class TestSignupcustomer(unittest.TestCase):
         os.environ["COGNITO_CLIENT_ID"] = "test_client_id"
         os.environ["AWS_REGION"] = "us-east-1"
         os.environ["DYNAMODB_TABLE_NAME"] = "test-verification-codes"
-        
+
         self.test_event = {
-            "httpMethod": "POST", 
-            "body": json.dumps({
-                "email": "test@example.com",
-                "code": "123456",
-                "firstName": "John",
-                "lastName": "Doe",
-                "dateOfBirth": "1990-01-01",
-                "gender": "Male"
-            })
+            "httpMethod": "POST",
+            "body": json.dumps(
+                {
+                    "email": "test@example.com",
+                    "code": "123456",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "dateOfBirth": "1990-01-01",
+                    "gender": "Male",
+                }
+            ),
         }
 
         self.test_context = {
@@ -61,28 +63,25 @@ class TestSignupcustomer(unittest.TestCase):
         mock_dynamodb.Table.return_value = mock_table
         current_time = int(time.time())
         mock_table.get_item.return_value = {
-            "Item": {
-                "code": "123456",
-                "lastRequestTime": current_time
-            }
+            "Item": {"code": "123456", "lastRequestTime": current_time}
         }
-        
+
         # Mock SES client
         mock_ses = MagicMock()
         mock_cognito = MagicMock()
-        mock_boto3_client.side_effect = lambda service, **kwargs: mock_ses if service == "ses" else mock_cognito
-        
+        mock_boto3_client.side_effect = lambda service, **kwargs: (
+            mock_ses if service == "ses" else mock_cognito
+        )
+
         # Mock Cognito authentication responses
-        mock_cognito.initiate_auth.return_value = {
-            "Session": "test-session-id"
-        }
+        mock_cognito.initiate_auth.return_value = {"Session": "test-session-id"}
         mock_cognito.respond_to_auth_challenge.return_value = {
             "AuthenticationResult": {
                 "AccessToken": "test-access-token",
-                "IdToken": "test-id-token", 
+                "IdToken": "test-id-token",
                 "RefreshToken": "test-refresh-token",
                 "TokenType": "Bearer",
-                "ExpiresIn": 3600
+                "ExpiresIn": 3600,
             }
         }
         
