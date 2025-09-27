@@ -68,12 +68,15 @@ class TestSocialauthuser(unittest.TestCase):
         # Mock Cognito client
         mock_cognito = MagicMock()
         mock_cognito_client.return_value = mock_cognito
-        
+
         # Mock UserNotFoundException for admin_get_user (user doesn't exist)
         from botocore.exceptions import ClientError
+
         user_not_found_error = ClientError(
-            error_response={'Error': {'Code': 'UserNotFoundException', 'Message': 'User not found'}},
-            operation_name='admin_get_user'
+            error_response={
+                "Error": {"Code": "UserNotFoundException", "Message": "User not found"}
+            },
+            operation_name="admin_get_user",
         )
         mock_cognito.admin_get_user.side_effect = user_not_found_error
         mock_cognito.admin_create_user.return_value = {}
