@@ -1,3 +1,4 @@
+# Test comment for branch verification - fixed directory structure
 import json
 import boto3
 import os
