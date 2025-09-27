@@ -58,17 +58,24 @@ class TestSocialauthuser(unittest.TestCase):
         """Test successful social_auth_user execution"""
         # Mock Google token verification
         mock_verify_token.return_value = {
+            "success": True,
             "email": "test@example.com",
-            "name": "Test User",
+            "first_name": "Test",
+            "last_name": "User",
             "picture": "https://example.com/pic.jpg",
         }
 
         # Mock Cognito client
         mock_cognito = MagicMock()
         mock_cognito_client.return_value = mock_cognito
-        mock_cognito.admin_get_user.side_effect = Exception(
-            "User not found"
-        )  # User doesn't exist
+        
+        # Mock UserNotFoundException for admin_get_user (user doesn't exist)
+        from botocore.exceptions import ClientError
+        user_not_found_error = ClientError(
+            error_response={'Error': {'Code': 'UserNotFoundException', 'Message': 'User not found'}},
+            operation_name='admin_get_user'
+        )
+        mock_cognito.admin_get_user.side_effect = user_not_found_error
         mock_cognito.admin_create_user.return_value = {}
         mock_cognito.admin_set_user_password.return_value = {}
         mock_cognito.admin_initiate_auth.return_value = {
@@ -85,8 +92,8 @@ class TestSocialauthuser(unittest.TestCase):
 
         result = social_auth_user.lambda_handler(self.test_event, self.test_context)
 
-        self.assertEqual(result["statusCode"], 200)
-        self.assertIn("message", json.loads(result["body"]))
+        self.assertEqual(result["statusCode"], 201)
+        self.assertIn("success", json.loads(result["body"]))
 
     def test_social_auth_user_invalid_event(self):
         """Test social_auth_user with invalid event"""
