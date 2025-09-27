@@ -25,13 +25,11 @@ class TestVeriftauthchallenge(unittest.TestCase):
         # Set required environment variables for testing
         os.environ["DYNAMODB_TABLE_NAME"] = "test-verification-codes"
         os.environ["AWS_REGION"] = "us-east-1"
-        
+
         self.test_event = {
             "request": {
                 "challengeAnswer": "123456",
-                "userAttributes": {
-                    "email": "test@example.com"
-                }
+                "userAttributes": {"email": "test@example.com"},
             }
         }
 
@@ -53,15 +51,10 @@ class TestVeriftauthchallenge(unittest.TestCase):
         mock_get_table.return_value = mock_table
         current_time = int(time.time())
         mock_table.get_item.return_value = {
-            "Item": {
-                "code": "123456",
-                "lastRequestTime": current_time
-            }
+            "Item": {"code": "123456", "lastRequestTime": current_time}
         }
-        
-        result = veriftAuthChallenge.lambda_handler(
-            self.test_event, self.test_context
-        )
+
+        result = veriftAuthChallenge.lambda_handler(self.test_event, self.test_context)
 
         self.assertIn("response", result)
         self.assertIn("answerCorrect", result["response"])
@@ -69,9 +62,7 @@ class TestVeriftauthchallenge(unittest.TestCase):
     def test_veriftAuthChallenge_invalid_event(self):
         """Test veriftAuthChallenge with invalid event"""
         invalid_event = {}
-        result = veriftAuthChallenge.lambda_handler(
-            invalid_event, self.test_context
-        )
+        result = veriftAuthChallenge.lambda_handler(invalid_event, self.test_context)
 
         self.assertIn("response", result)
         self.assertIn("answerCorrect", result["response"])
