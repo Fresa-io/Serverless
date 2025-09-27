@@ -77,8 +77,9 @@ def handle_rate_limiting(email):
     current_time = int(datetime.now(timezone.utc).timestamp())
 
     try:
+        dynamodb_client = get_dynamodb_client()
         response = dynamodb_client.get_item(
-            TableName=REQUIRED_ENV_VARS["DYNAMODB_TABLE_NAME"],
+            TableName=get_dynamodb_table_name(),
             Key={"email": {"S": email}},
             ProjectionExpression="requestHistory, lastRequestTime, postBurstCodeSent",
         )
@@ -195,8 +196,9 @@ def update_dynamo_record(email, code, is_post_burst_code=False):
         expression_attribute_values[":postBurstCodeSent"] = {"BOOL": True}
 
     try:
+        dynamodb_client = get_dynamodb_client()
         dynamodb_client.update_item(
-            TableName=REQUIRED_ENV_VARS["DYNAMODB_TABLE_NAME"],
+            TableName=get_dynamodb_table_name(),
             Key={"email": {"S": email}},
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expression_attribute_names,
@@ -210,10 +212,11 @@ def update_dynamo_record(email, code, is_post_burst_code=False):
 def send_verification_email(email, code):
     """Send templated email using predefined SES template"""
     try:
+        ses_client = get_ses_client()
         ses_client.send_templated_email(
-            Source=REQUIRED_ENV_VARS["SES_FROM_EMAIL_ADDRESS"],
+            Source=get_ses_from_email_address(),
             Destination={"ToAddresses": [email]},
-            Template=REQUIRED_ENV_VARS["SES_VERIFICATION_TEMPLATE_NAME"],
+            Template=get_ses_verification_template_name(),
             TemplateData=json.dumps(
                 {"verificationCode": code, "expirationMinutes": CODE_EXPIRATION_MINUTES}
             ),
@@ -228,8 +231,9 @@ def determine_if_post_burst_code(email):
     current_time = int(datetime.now(timezone.utc).timestamp())
 
     try:
+        dynamodb_client = get_dynamodb_client()
         response = dynamodb_client.get_item(
-            TableName=REQUIRED_ENV_VARS["DYNAMODB_TABLE_NAME"],
+            TableName=get_dynamodb_table_name(),
             Key={"email": {"S": email}},
             ProjectionExpression="requestHistory, postBurstCodeSent",
         )
