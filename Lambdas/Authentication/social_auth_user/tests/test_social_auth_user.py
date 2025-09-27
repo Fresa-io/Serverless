@@ -82,7 +82,7 @@ class TestSocialauthuser(unittest.TestCase):
         # Mock SES client
         mock_ses = MagicMock()
         mock_ses_client.return_value = mock_ses
-        
+
         result = social_auth_user.lambda_handler(self.test_event, self.test_context)
 
         self.assertEqual(result["statusCode"], 200)
