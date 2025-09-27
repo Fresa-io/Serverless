@@ -84,7 +84,7 @@ class TestSignupcustomer(unittest.TestCase):
                 "ExpiresIn": 3600,
             }
         }
-        
+
         result = signUpCustomer.lambda_handler(self.test_event, self.test_context)
 
         self.assertEqual(result["statusCode"], 200)
