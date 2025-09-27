@@ -76,8 +76,7 @@ def handle_rate_limiting(email):
     current_time = int(datetime.now(timezone.utc).timestamp())
 
     try:
-        dynamodb_client = get_dynamodb_client()
-        response = dynamodb_client.get_item(
+        response = get_dynamodb_client().get_item(
             TableName=get_dynamodb_table_name(),
             Key={"email": {"S": email}},
             ProjectionExpression="requestHistory, lastRequestTime, postBurstCodeSent",
@@ -195,8 +194,7 @@ def update_dynamo_record(email, code, is_post_burst_code=False):
         expression_attribute_values[":postBurstCodeSent"] = {"BOOL": True}
 
     try:
-        dynamodb_client = get_dynamodb_client()
-        dynamodb_client.update_item(
+        get_dynamodb_client().update_item(
             TableName=get_dynamodb_table_name(),
             Key={"email": {"S": email}},
             UpdateExpression=update_expression,
@@ -211,8 +209,7 @@ def update_dynamo_record(email, code, is_post_burst_code=False):
 def send_verification_email(email, code):
     """Send templated email using predefined SES template"""
     try:
-        ses_client = get_ses_client()
-        ses_client.send_templated_email(
+        get_ses_client().send_templated_email(
             Source=get_ses_from_email_address(),
             Destination={"ToAddresses": [email]},
             Template=get_ses_verification_template_name(),
@@ -230,8 +227,7 @@ def determine_if_post_burst_code(email):
     current_time = int(datetime.now(timezone.utc).timestamp())
 
     try:
-        dynamodb_client = get_dynamodb_client()
-        response = dynamodb_client.get_item(
+        response = get_dynamodb_client().get_item(
             TableName=get_dynamodb_table_name(),
             Key={"email": {"S": email}},
             ProjectionExpression="requestHistory, postBurstCodeSent",
