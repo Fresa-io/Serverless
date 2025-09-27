@@ -7,6 +7,8 @@ import unittest
 import json
 import sys
 import os
+import time
+from unittest.mock import patch, MagicMock
 
 # Add the function directory to the path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,7 +22,18 @@ class TestVeriftauthchallenge(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.test_event = {"httpMethod": "POST", "body": json.dumps({"test": "data"})}
+        # Set required environment variables for testing
+        os.environ["DYNAMODB_TABLE_NAME"] = "test-verification-codes"
+        os.environ["AWS_REGION"] = "us-east-1"
+        
+        self.test_event = {
+            "request": {
+                "challengeAnswer": "123456",
+                "userAttributes": {
+                    "email": "test@example.com"
+                }
+            }
+        }
 
         self.test_context = {
             "function_name": "veriftAuthChallenge",
@@ -32,25 +45,36 @@ class TestVeriftauthchallenge(unittest.TestCase):
             "log_stream_name": "test-log-stream",
         }
 
-    def test_veriftAuthChallenge_success(self):
+    @patch("veriftAuthChallenge.get_table")
+    def test_veriftAuthChallenge_success(self, mock_get_table):
         """Test successful veriftAuthChallenge execution"""
-        result = veriftAuthChallenge.veriftAuthChallenge(
+        # Mock DynamoDB table
+        mock_table = MagicMock()
+        mock_get_table.return_value = mock_table
+        current_time = int(time.time())
+        mock_table.get_item.return_value = {
+            "Item": {
+                "code": "123456",
+                "lastRequestTime": current_time
+            }
+        }
+        
+        result = veriftAuthChallenge.lambda_handler(
             self.test_event, self.test_context
         )
 
-        self.assertEqual(result["statusCode"], 200)
-        self.assertIn("message", json.loads(result["body"]))
+        self.assertIn("response", result)
+        self.assertIn("answerCorrect", result["response"])
 
     def test_veriftAuthChallenge_invalid_event(self):
         """Test veriftAuthChallenge with invalid event"""
         invalid_event = {}
-        result = veriftAuthChallenge.veriftAuthChallenge(
+        result = veriftAuthChallenge.lambda_handler(
             invalid_event, self.test_context
         )
 
-        self.assertEqual(
-            result["statusCode"], 200
-        )  # Should still work with empty event
+        self.assertIn("response", result)
+        self.assertIn("answerCorrect", result["response"])
 
 
 if __name__ == "__main__":
