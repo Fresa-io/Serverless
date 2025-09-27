@@ -18,6 +18,10 @@ from config import LAMBDA_FUNCTION_NAMES, LAMBDA_ALIASES, DEPLOYMENT_ENV
 class LambdaAliasManager:
     def __init__(self, region: str = None):
         """Initialize the Lambda alias manager"""
+        # Use environment variable or default region if none provided
+        if region is None:
+            region = os.environ.get("AWS_REGION") or os.environ.get("CDK_DEFAULT_REGION") or "us-east-1"
+        
         self.lambda_client = boto3.client("lambda", region_name=region)
         self.functions = LAMBDA_FUNCTION_NAMES
         self.aliases = LAMBDA_ALIASES
