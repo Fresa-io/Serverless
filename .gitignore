@@ -93,3 +93,24 @@ luis.pub
 id_rsa*
 *.pem
 *.key
+
+# SSH Private Keys
+*.pem
+*.key
+id_rsa
+id_ed25519
+id_ecdsa
+ssh_host_*
+*.ppk
+
+# Local development credentials (NEVER COMMIT THESE)
+local_credentials.sh
+local_env.sh
+dev_credentials.txt
+*.credentials
+aws_credentials.txt
+deployment_credentials.txt
+
+# Base64 encoded credentials (NEVER COMMIT)
+encoded_credentials.txt
+base64_creds.txt

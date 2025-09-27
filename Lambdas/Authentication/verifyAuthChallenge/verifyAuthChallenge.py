@@ -5,12 +5,13 @@ import time
 from json import JSONDecodeError
 from botocore.exceptions import ClientError
 
-# Initialize clients lazily to avoid region issues during testing
+# Initialize AWS services lazily to avoid issues during testing
 _cognito = None
 _dynamodb = None
 
 
 def get_cognito_client():
+    """Get Cognito client with lazy initialization"""
     global _cognito
     if _cognito is None:
         _cognito = boto3.client("cognito-idp")
@@ -18,6 +19,7 @@ def get_cognito_client():
 
 
 def get_dynamodb_resource():
+    """Get DynamoDB resource with lazy initialization"""
     global _dynamodb
     if _dynamodb is None:
         _dynamodb = boto3.resource("dynamodb")
@@ -42,7 +44,7 @@ def get_code_expiration_minutes():
 
 
 def check_user_exists_in_cognito(email):
-    """Check if user exists in Cognito..."""
+    """Check if user exists in Cognito"""
     try:
         cognito = get_cognito_client()
         cognito.admin_get_user(UserPoolId=get_user_pool_id(), Username=email)

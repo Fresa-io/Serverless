@@ -9,6 +9,12 @@ LAMBDA_FUNCTION_NAMES = {
     "signUpCustomer": "signUpCustomer",  # Fresa customer signup function
     "verifyCodeAndAuthHandler": "verifyCodeAndAuthHandler",  # Fresa verification function
     "identity_provider_auth": "identity_provider_auth",  # Fresa auth provider function
+    "testFunction": "testFunction",
+    "social_auth_user": "social_auth_user",
+    "defineAuthChallenge": "defineAuthChallenge",
+    "verifyAuthChallenge": "verifyAuthChallenge",
+    "veriftAuthChallenge": "veriftAuthChallenge",
+    "createAuthChallenge": "createAuthChallenge",
 }
 
 # Lambda Alias Configuration (only STAGING and PROD - DEV is local-only)

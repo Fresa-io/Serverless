@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""
+Unit tests for recieveEmail Lambda function
+"""
+
+import unittest
+import json
+import sys
+import os
+from unittest.mock import patch, MagicMock
+
+# Add the function directory to the path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Import the function module
+import recieveEmail
+
+
+class TestRecieveemail(unittest.TestCase):
+    """Test cases for recieveEmail function"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Set required environment variables for testing
+        os.environ["DYNAMODB_TABLE_NAME"] = "test-verification-codes"
+        os.environ["SES_FROM_EMAIL_ADDRESS"] = "test@example.com"
+        os.environ["SES_VERIFICATION_TEMPLATE_NAME"] = "TestVerificationTemplate"
+        os.environ["AWS_REGION"] = "us-east-1"
+
+        self.test_event = {
+            "httpMethod": "GET",
+            "queryStringParameters": {"email": "test@example.com"},
+        }
+
+        self.test_context = {
+            "function_name": "recieveEmail",
+            "function_version": "$LATEST",
+            "invoked_function_arn": "arn:aws:lambda:us-east-1:123456789012:function:recieveEmail:$LATEST",
+            "memory_limit_in_mb": "128",
+            "aws_request_id": "test-request-id",
+            "log_group_name": "/aws/lambda/recieveEmail",
+            "log_stream_name": "test-log-stream",
+        }
+
+    @patch("recieveEmail.get_dynamodb_client")
+    @patch("recieveEmail.get_ses_client")
+    def test_recieveEmail_success(self, mock_ses_client, mock_dynamodb_client):
+        """Test successful recieveEmail execution"""
+        # Mock DynamoDB client
+        mock_dynamodb = MagicMock()
+        mock_dynamodb_client.return_value = mock_dynamodb
+        mock_dynamodb.get_item.return_value = {
+            "Item": {}
+        }  # No existing rate limit data
+
+        # Mock SES client
+        mock_ses = MagicMock()
+        mock_ses_client.return_value = mock_ses
+
+        result = recieveEmail.lambda_handler(self.test_event, self.test_context)
+
+        self.assertEqual(result["statusCode"], 200)
+        self.assertIn("message", json.loads(result["body"]))
+
+        # Verify that DynamoDB update_item was called
+        mock_dynamodb.update_item.assert_called_once()
+        # Verify that SES send_templated_email was called
+        mock_ses.send_templated_email.assert_called_once()
+
+    def test_recieveEmail_invalid_event(self):
+        """Test recieveEmail with invalid event"""
+        invalid_event = {}
+        result = recieveEmail.lambda_handler(invalid_event, self.test_context)
+
+        self.assertEqual(
+            result["statusCode"], 400
+        )  # Should return 400 for missing email parameter
+
+
+if __name__ == "__main__":
+    unittest.main()

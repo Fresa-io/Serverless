@@ -1,0 +1,4 @@
+{
+  "httpMethod": "POST",
+  "body": "{\"test\": \"data\", \"function\": \"social_auth_user\"}"
+}
