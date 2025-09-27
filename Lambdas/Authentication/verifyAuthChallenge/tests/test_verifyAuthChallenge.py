@@ -28,13 +28,10 @@ class TestVerifyauthchallenge(unittest.TestCase):
         os.environ["AWS_REGION"] = "us-east-1"
         os.environ["DYNAMODB_TABLE_NAME"] = "test-verification-codes"
         os.environ["CODE_EXPIRATION_MINUTES"] = "10"
-        
+
         self.test_event = {
             "httpMethod": "POST",
-            "body": json.dumps({
-                "email": "test@example.com",
-                "code": "123456"
-            })
+            "body": json.dumps({"email": "test@example.com", "code": "123456"}),
         }
 
         self.test_context = {
@@ -49,25 +46,25 @@ class TestVerifyauthchallenge(unittest.TestCase):
 
     @patch("verifyAuthChallenge.get_cognito_client")
     @patch("verifyAuthChallenge.get_dynamodb_resource")
-    def test_verifyAuthChallenge_success(self, mock_dynamodb_resource, mock_cognito_client):
+    def test_verifyAuthChallenge_success(
+        self, mock_dynamodb_resource, mock_cognito_client
+    ):
         """Test successful verifyAuthChallenge execution"""
         # Mock Cognito client
         mock_cognito = MagicMock()
         mock_cognito_client.return_value = mock_cognito
         mock_cognito.admin_get_user.return_value = {}
-        mock_cognito.initiate_auth.return_value = {
-            "Session": "test-session-id"
-        }
+        mock_cognito.initiate_auth.return_value = {"Session": "test-session-id"}
         mock_cognito.respond_to_auth_challenge.return_value = {
             "AuthenticationResult": {
                 "AccessToken": "test-access-token",
                 "IdToken": "test-id-token",
                 "RefreshToken": "test-refresh-token",
                 "TokenType": "Bearer",
-                "ExpiresIn": 3600
+                "ExpiresIn": 3600,
             }
         }
-        
+
         # Mock DynamoDB
         mock_dynamodb = MagicMock()
         mock_dynamodb_resource.return_value = mock_dynamodb
@@ -75,12 +72,9 @@ class TestVerifyauthchallenge(unittest.TestCase):
         mock_dynamodb.Table.return_value = mock_table
         current_time = int(time.time())
         mock_table.get_item.return_value = {
-            "Item": {
-                "code": "123456",
-                "lastRequestTime": current_time
-            }
+            "Item": {"code": "123456", "lastRequestTime": current_time}
         }
-        
+
         result = verifyAuthChallenge.lambda_handler(self.test_event, self.test_context)
 
         self.assertEqual(result["statusCode"], 200)
