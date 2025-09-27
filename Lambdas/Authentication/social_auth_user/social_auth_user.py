@@ -33,8 +33,10 @@ def get_ses_client():
         _ses_client = boto3.client("ses", region_name=aws_region)
     return _ses_client
 
+
 # Initialize urllib3
 http = urllib3.PoolManager()
+
 
 # Environment variables with lazy loading
 def get_client_id():
@@ -45,6 +47,8 @@ def get_client_id():
 def get_user_pool_id():
     """Get Cognito user pool ID from environment"""
     return os.environ.get("COGNITO_USER_POOL_ID")
+
+
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "admin@fresa.live")
 
 
@@ -235,7 +239,9 @@ def lambda_handler(event, context):
 
         # 2. Double-check that user doesn't exist (safety check)
         try:
-            get_cognito_client().admin_get_user(UserPoolId=get_user_pool_id(), Username=email)
+            get_cognito_client().admin_get_user(
+                UserPoolId=get_user_pool_id(), Username=email
+            )
             # If we get here, user exists - this shouldn't happen in normal flow
             logger.warning(
                 f"User {email} already exists but Lambda 2 was called. This indicates a race condition."

@@ -26,15 +26,17 @@ class TestSocialauthuser(unittest.TestCase):
         os.environ["COGNITO_CLIENT_ID"] = "test_client_id"
         os.environ["AWS_REGION"] = "us-east-1"
         os.environ["SENDER_EMAIL"] = "test@example.com"
-        
+
         self.test_event = {
             "httpMethod": "POST",
             "pathParameters": {"provider": "google"},
-            "body": json.dumps({
-                "idToken": "test-google-id-token",
-                "gender": "Male",
-                "dateOfBirth": "1990-01-01"
-            })
+            "body": json.dumps(
+                {
+                    "idToken": "test-google-id-token",
+                    "gender": "Male",
+                    "dateOfBirth": "1990-01-01",
+                }
+            ),
         }
 
         self.test_context = {
@@ -50,29 +52,33 @@ class TestSocialauthuser(unittest.TestCase):
     @patch("social_auth_user.get_cognito_client")
     @patch("social_auth_user.get_ses_client")
     @patch("social_auth_user.verify_google_token")
-    def test_social_auth_user_success(self, mock_verify_token, mock_ses_client, mock_cognito_client):
+    def test_social_auth_user_success(
+        self, mock_verify_token, mock_ses_client, mock_cognito_client
+    ):
         """Test successful social_auth_user execution"""
         # Mock Google token verification
         mock_verify_token.return_value = {
             "email": "test@example.com",
             "name": "Test User",
-            "picture": "https://example.com/pic.jpg"
+            "picture": "https://example.com/pic.jpg",
         }
-        
+
         # Mock Cognito client
         mock_cognito = MagicMock()
         mock_cognito_client.return_value = mock_cognito
-        mock_cognito.admin_get_user.side_effect = Exception("User not found")  # User doesn't exist
+        mock_cognito.admin_get_user.side_effect = Exception(
+            "User not found"
+        )  # User doesn't exist
         mock_cognito.admin_create_user.return_value = {}
         mock_cognito.admin_set_user_password.return_value = {}
         mock_cognito.admin_initiate_auth.return_value = {
             "AuthenticationResult": {
                 "AccessToken": "test-access-token",
                 "IdToken": "test-id-token",
-                "RefreshToken": "test-refresh-token"
+                "RefreshToken": "test-refresh-token",
             }
         }
-        
+
         # Mock SES client
         mock_ses = MagicMock()
         mock_ses_client.return_value = mock_ses
