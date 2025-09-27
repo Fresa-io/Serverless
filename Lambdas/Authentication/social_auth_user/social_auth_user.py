@@ -11,16 +11,40 @@ from botocore.exceptions import ClientError
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Initialize AWS services
-cognito = boto3.client("cognito-idp")
-ses_client = boto3.client("ses", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+# Initialize AWS services lazily to avoid issues during testing
+_cognito_client = None
+_ses_client = None
+
+
+def get_cognito_client():
+    """Get Cognito client with lazy initialization"""
+    global _cognito_client
+    if _cognito_client is None:
+        aws_region = os.environ.get("AWS_REGION", "us-east-1")
+        _cognito_client = boto3.client("cognito-idp", region_name=aws_region)
+    return _cognito_client
+
+
+def get_ses_client():
+    """Get SES client with lazy initialization"""
+    global _ses_client
+    if _ses_client is None:
+        aws_region = os.environ.get("AWS_REGION", "us-east-1")
+        _ses_client = boto3.client("ses", region_name=aws_region)
+    return _ses_client
 
 # Initialize urllib3
 http = urllib3.PoolManager()
 
-# Environment variables
-CLIENT_ID = os.environ["COGNITO_CLIENT_ID"]
-USER_POOL_ID = os.environ["COGNITO_USER_POOL_ID"]
+# Environment variables with lazy loading
+def get_client_id():
+    """Get Cognito client ID from environment"""
+    return os.environ.get("COGNITO_CLIENT_ID")
+
+
+def get_user_pool_id():
+    """Get Cognito user pool ID from environment"""
+    return os.environ.get("COGNITO_USER_POOL_ID")
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "admin@fresa.live")
 
 
@@ -119,7 +143,7 @@ def send_welcome_email(email, first_name, gender=None):
         else:
             template_data["greeting"] = "Bienvenido"
 
-        ses_client.send_templated_email(
+        get_ses_client().send_templated_email(
             Source=SENDER_EMAIL,
             Destination={"ToAddresses": [email]},
             Template="fresa-welcome-template",  # Make sure this template exists in SES
@@ -211,7 +235,7 @@ def lambda_handler(event, context):
 
         # 2. Double-check that user doesn't exist (safety check)
         try:
-            cognito.admin_get_user(UserPoolId=USER_POOL_ID, Username=email)
+            get_cognito_client().admin_get_user(UserPoolId=get_user_pool_id(), Username=email)
             # If we get here, user exists - this shouldn't happen in normal flow
             logger.warning(
                 f"User {email} already exists but Lambda 2 was called. This indicates a race condition."
@@ -248,8 +272,8 @@ def lambda_handler(event, context):
             user_attributes.append({"Name": "picture", "Value": picture_url})
 
         try:
-            cognito.admin_create_user(
-                UserPoolId=USER_POOL_ID,
+            get_cognito_client().admin_create_user(
+                UserPoolId=get_user_pool_id(),
                 Username=email,
                 UserAttributes=user_attributes,
                 TemporaryPassword=temp_password,
@@ -257,8 +281,8 @@ def lambda_handler(event, context):
             )
 
             # Set the password to permanent
-            cognito.admin_set_user_password(
-                UserPoolId=USER_POOL_ID,
+            get_cognito_client().admin_set_user_password(
+                UserPoolId=get_user_pool_id(),
                 Username=email,
                 Password=temp_password,
                 Permanent=True,
@@ -282,9 +306,9 @@ def lambda_handler(event, context):
         # 4. Authenticate the newly created user
         logger.info(f"Authenticating new user: {email}")
         try:
-            auth_response = cognito.admin_initiate_auth(
-                UserPoolId=USER_POOL_ID,
-                ClientId=CLIENT_ID,
+            auth_response = get_cognito_client().admin_initiate_auth(
+                UserPoolId=get_user_pool_id(),
+                ClientId=get_client_id(),
                 AuthFlow="ADMIN_NO_SRP_AUTH",
                 AuthParameters={"USERNAME": email, "PASSWORD": temp_password},
             )

@@ -7,6 +7,7 @@ import unittest
 import json
 import sys
 import os
+from unittest.mock import patch, MagicMock
 
 # Add the function directory to the path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,7 +21,21 @@ class TestSocialauthuser(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.test_event = {"httpMethod": "POST", "body": json.dumps({"test": "data"})}
+        # Set required environment variables for testing
+        os.environ["COGNITO_USER_POOL_ID"] = "us-east-1_test123"
+        os.environ["COGNITO_CLIENT_ID"] = "test_client_id"
+        os.environ["AWS_REGION"] = "us-east-1"
+        os.environ["SENDER_EMAIL"] = "test@example.com"
+        
+        self.test_event = {
+            "httpMethod": "POST",
+            "pathParameters": {"provider": "google"},
+            "body": json.dumps({
+                "idToken": "test-google-id-token",
+                "gender": "Male",
+                "dateOfBirth": "1990-01-01"
+            })
+        }
 
         self.test_context = {
             "function_name": "social_auth_user",
@@ -32,9 +47,37 @@ class TestSocialauthuser(unittest.TestCase):
             "log_stream_name": "test-log-stream",
         }
 
-    def test_social_auth_user_success(self):
+    @patch("social_auth_user.get_cognito_client")
+    @patch("social_auth_user.get_ses_client")
+    @patch("social_auth_user.verify_google_token")
+    def test_social_auth_user_success(self, mock_verify_token, mock_ses_client, mock_cognito_client):
         """Test successful social_auth_user execution"""
-        result = social_auth_user.social_auth_user(self.test_event, self.test_context)
+        # Mock Google token verification
+        mock_verify_token.return_value = {
+            "email": "test@example.com",
+            "name": "Test User",
+            "picture": "https://example.com/pic.jpg"
+        }
+        
+        # Mock Cognito client
+        mock_cognito = MagicMock()
+        mock_cognito_client.return_value = mock_cognito
+        mock_cognito.admin_get_user.side_effect = Exception("User not found")  # User doesn't exist
+        mock_cognito.admin_create_user.return_value = {}
+        mock_cognito.admin_set_user_password.return_value = {}
+        mock_cognito.admin_initiate_auth.return_value = {
+            "AuthenticationResult": {
+                "AccessToken": "test-access-token",
+                "IdToken": "test-id-token",
+                "RefreshToken": "test-refresh-token"
+            }
+        }
+        
+        # Mock SES client
+        mock_ses = MagicMock()
+        mock_ses_client.return_value = mock_ses
+        
+        result = social_auth_user.lambda_handler(self.test_event, self.test_context)
 
         self.assertEqual(result["statusCode"], 200)
         self.assertIn("message", json.loads(result["body"]))
@@ -42,11 +85,11 @@ class TestSocialauthuser(unittest.TestCase):
     def test_social_auth_user_invalid_event(self):
         """Test social_auth_user with invalid event"""
         invalid_event = {}
-        result = social_auth_user.social_auth_user(invalid_event, self.test_context)
+        result = social_auth_user.lambda_handler(invalid_event, self.test_context)
 
         self.assertEqual(
-            result["statusCode"], 200
-        )  # Should still work with empty event
+            result["statusCode"], 400
+        )  # Should return 400 for invalid event
 
 
 if __name__ == "__main__":
