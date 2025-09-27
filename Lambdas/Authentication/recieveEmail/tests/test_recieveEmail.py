@@ -7,6 +7,7 @@ import unittest
 import json
 import sys
 import os
+from unittest.mock import patch, MagicMock
 
 # Add the function directory to the path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -26,7 +27,10 @@ class TestRecieveemail(unittest.TestCase):
         os.environ["SES_VERIFICATION_TEMPLATE_NAME"] = "TestVerificationTemplate"
         os.environ["AWS_REGION"] = "us-east-1"
 
-        self.test_event = {"httpMethod": "POST", "body": json.dumps({"test": "data"})}
+        self.test_event = {
+            "httpMethod": "GET",
+            "queryStringParameters": {"email": "test@example.com"}
+        }
 
         self.test_context = {
             "function_name": "recieveEmail",
@@ -38,12 +42,28 @@ class TestRecieveemail(unittest.TestCase):
             "log_stream_name": "test-log-stream",
         }
 
-    def test_recieveEmail_success(self):
+    @patch('recieveEmail.get_dynamodb_client')
+    @patch('recieveEmail.get_ses_client')
+    def test_recieveEmail_success(self, mock_ses_client, mock_dynamodb_client):
         """Test successful recieveEmail execution"""
+        # Mock DynamoDB client
+        mock_dynamodb = MagicMock()
+        mock_dynamodb_client.return_value = mock_dynamodb
+        mock_dynamodb.get_item.return_value = {"Item": {}}  # No existing rate limit data
+        
+        # Mock SES client
+        mock_ses = MagicMock()
+        mock_ses_client.return_value = mock_ses
+        
         result = recieveEmail.lambda_handler(self.test_event, self.test_context)
 
         self.assertEqual(result["statusCode"], 200)
         self.assertIn("message", json.loads(result["body"]))
+        
+        # Verify that DynamoDB update_item was called
+        mock_dynamodb.update_item.assert_called_once()
+        # Verify that SES send_templated_email was called
+        mock_ses.send_templated_email.assert_called_once()
 
     def test_recieveEmail_invalid_event(self):
         """Test recieveEmail with invalid event"""
@@ -51,8 +71,8 @@ class TestRecieveemail(unittest.TestCase):
         result = recieveEmail.lambda_handler(invalid_event, self.test_context)
 
         self.assertEqual(
-            result["statusCode"], 200
-        )  # Should still work with empty event
+            result["statusCode"], 400
+        )  # Should return 400 for missing email parameter
 
 
 if __name__ == "__main__":
