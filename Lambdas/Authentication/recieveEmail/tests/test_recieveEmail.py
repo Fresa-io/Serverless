@@ -29,7 +29,7 @@ class TestRecieveemail(unittest.TestCase):
 
         self.test_event = {
             "httpMethod": "GET",
-            "queryStringParameters": {"email": "test@example.com"}
+            "queryStringParameters": {"email": "test@example.com"},
         }
 
         self.test_context = {
@@ -42,24 +42,26 @@ class TestRecieveemail(unittest.TestCase):
             "log_stream_name": "test-log-stream",
         }
 
-    @patch('recieveEmail.get_dynamodb_client')
-    @patch('recieveEmail.get_ses_client')
+    @patch("recieveEmail.get_dynamodb_client")
+    @patch("recieveEmail.get_ses_client")
     def test_recieveEmail_success(self, mock_ses_client, mock_dynamodb_client):
         """Test successful recieveEmail execution"""
         # Mock DynamoDB client
         mock_dynamodb = MagicMock()
         mock_dynamodb_client.return_value = mock_dynamodb
-        mock_dynamodb.get_item.return_value = {"Item": {}}  # No existing rate limit data
-        
+        mock_dynamodb.get_item.return_value = {
+            "Item": {}
+        }  # No existing rate limit data
+
         # Mock SES client
         mock_ses = MagicMock()
         mock_ses_client.return_value = mock_ses
-        
+
         result = recieveEmail.lambda_handler(self.test_event, self.test_context)
 
         self.assertEqual(result["statusCode"], 200)
         self.assertIn("message", json.loads(result["body"]))
-        
+
         # Verify that DynamoDB update_item was called
         mock_dynamodb.update_item.assert_called_once()
         # Verify that SES send_templated_email was called
