@@ -1,7 +1,6 @@
 from aws_cdk import (
-    # Duration,
+    Duration,
     Stack,
-    # aws_sqs as sqs,
     aws_lambda as _lambda,
     aws_iam as iam,
     aws_sqs as sqs,
@@ -12,9 +11,11 @@ from aws_cdk import (
 from constructs import Construct
 import sys
 import os
+from pathlib import Path
 
 # Import config from the root directory
 from config import LAMBDA_FUNCTION_NAMES
+from utils.aws_utils import get_aws_account_info
 
 
 class CdkStack(Stack):
@@ -22,104 +23,136 @@ class CdkStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # Step 2: Reference Existing Lambda Functions (Optional Transition Phase)
-        # Using Function.from_function_name() to import existing functions without recreating them
-
-        # Reference existing Fresa Lambda functions by their function names from config
-        recieve_email_function = _lambda.Function.from_function_name(
-            self, "RecieveEmailFunction", LAMBDA_FUNCTION_NAMES["recieveEmail"]
+        # Create Lambda execution role
+        lambda_role = iam.Role(
+            self, "LambdaExecutionRole",
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
+            ]
         )
 
-        signup_customer_function = _lambda.Function.from_function_name(
-            self, "SignUpCustomerFunction", LAMBDA_FUNCTION_NAMES["signUpCustomer"]
+        # Create Lambda functions from source code
+        recieve_email_function = _lambda.Function(
+            self, "RecieveEmailFunction",
+            function_name=LAMBDA_FUNCTION_NAMES["recieveEmail"],
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="recieveEmail.lambda_handler",
+            code=_lambda.Code.from_asset("Lambdas/Authentication/recieveEmail"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            description="Fresa email processing function"
         )
 
-        verify_code_auth_function = _lambda.Function.from_function_name(
-            self,
-            "VerifyCodeAndAuthHandlerFunction",
-            LAMBDA_FUNCTION_NAMES["verifyCodeAndAuthHandler"],
+        signup_customer_function = _lambda.Function(
+            self, "SignUpCustomerFunction",
+            function_name=LAMBDA_FUNCTION_NAMES["signUpCustomer"],
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="signUpCustomer.lambda_handler",
+            code=_lambda.Code.from_asset("Lambdas/Authentication/signUpCustomer"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            description="Fresa customer signup function"
         )
 
-        identity_provider_auth_function = _lambda.Function.from_function_name(
-            self,
-            "IdentityProviderAuthFunction",
-            LAMBDA_FUNCTION_NAMES["identity_provider_auth"],
+        verify_code_auth_function = _lambda.Function(
+            self, "VerifyCodeAndAuthHandlerFunction",
+            function_name=LAMBDA_FUNCTION_NAMES["verifyCodeAndAuthHandler"],
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="verifyCodeAndAuthHandler.lambda_handler",
+            code=_lambda.Code.from_asset("Lambdas/Authentication/verifyCodeAndAuthHandler"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            description="Fresa verification function"
         )
 
-        # Example: Add new permissions to existing functions
-        # This demonstrates how you can start managing permissions via CDK
-
-        # Example 1: Grant S3 read permissions to recieveEmail
-        # s3_bucket = s3.Bucket.from_bucket_name(self, "MyBucket", "my-bucket-name")
-        # s3_bucket.grant_read(recieve_email_function)
-
-        # Example 2: Grant SQS permissions to signup_customer
-        # sqs_queue = sqs.Queue.from_queue_arn(self, "MyQueue", "arn:aws:sqs:region:account:queue-name")
-        # sqs_queue.grant_consume_messages(signup_customer_function)
-
-        # Example 3: Add CloudWatch Logs permissions
-        recieve_email_function.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "logs:CreateLogGroup",
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents",
-                ],
-                resources=["*"],
-            )
+        identity_provider_auth_function = _lambda.Function(
+            self, "IdentityProviderAuthFunction",
+            function_name=LAMBDA_FUNCTION_NAMES["identity_provider_auth"],
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="identity_provider_auth.lambda_handler",
+            code=_lambda.Code.from_asset("Lambdas/Authentication/identity_provider_auth"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            description="Fresa auth provider function"
         )
 
-        signup_customer_function.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "logs:CreateLogGroup",
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents",
-                ],
-                resources=["*"],
-            )
+        # Create additional functions
+        test_function = _lambda.Function(
+            self, "TestFunction",
+            function_name=LAMBDA_FUNCTION_NAMES["testFunction"],
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="testFunction.lambda_handler",
+            code=_lambda.Code.from_asset("Lambdas/Authentication/testFunction"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            description="Test function"
         )
 
-        verify_code_auth_function.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "logs:CreateLogGroup",
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents",
-                ],
-                resources=["*"],
-            )
+        social_auth_user_function = _lambda.Function(
+            self, "SocialAuthUserFunction",
+            function_name=LAMBDA_FUNCTION_NAMES["social_auth_user"],
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="social_auth_user.lambda_handler",
+            code=_lambda.Code.from_asset("Lambdas/Authentication/social_auth_user"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            description="Social auth user function"
         )
 
-        identity_provider_auth_function.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "logs:CreateLogGroup",
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents",
-                ],
-                resources=["*"],
-            )
+        define_auth_challenge_function = _lambda.Function(
+            self, "DefineAuthChallengeFunction",
+            function_name=LAMBDA_FUNCTION_NAMES["defineAuthChallenge"],
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="defineAuthChallenge.lambda_handler",
+            code=_lambda.Code.from_asset("Lambdas/Authentication/defineAuthChallenge"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            description="Define auth challenge function"
         )
 
-        # Example 4: Create EventBridge rule to trigger recieveEmail
-        # rule = events.Rule(
-        #     self, "RecieveEmailRule",
-        #     schedule=events.Schedule.rate(Duration.minutes(5)),
-        #     targets=[targets.LambdaFunction(recieve_email_function)]
-        # )
+        verify_auth_challenge_function = _lambda.Function(
+            self, "VerifyAuthChallengeFunction",
+            function_name=LAMBDA_FUNCTION_NAMES["verifyAuthChallenge"],
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="verifyAuthChallenge.lambda_handler",
+            code=_lambda.Code.from_asset("Lambdas/Authentication/verifyAuthChallenge"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            description="Verify auth challenge function"
+        )
 
-        # Example 5: Create SQS queue and grant permissions to signup_customer
-        # processing_queue = sqs.Queue(
-        #     self, "FresaProcessingQueue",
-        #     visibility_timeout=Duration.seconds(300),
-        #     retention_period=Duration.days(14)
-        # )
-        # processing_queue.grant_consume_messages(signup_customer_function)
+        verift_auth_challenge_function = _lambda.Function(
+            self, "VeriftAuthChallengeFunction",
+            function_name=LAMBDA_FUNCTION_NAMES["veriftAuthChallenge"],
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="veriftAuthChallenge.lambda_handler",
+            code=_lambda.Code.from_asset("Lambdas/Authentication/veriftAuthChallenge"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            description="Verift auth challenge function"
+        )
+
+        create_auth_challenge_function = _lambda.Function(
+            self, "CreateAuthChallengeFunction",
+            function_name=LAMBDA_FUNCTION_NAMES["createAuthChallenge"],
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="createAuthChallenge.lambda_handler",
+            code=_lambda.Code.from_asset("Lambdas/Authentication/createAuthChallenge"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=128,
+            description="Create auth challenge function"
+        )
 
         # Output the function ARNs for reference
         CfnOutput(
@@ -148,4 +181,46 @@ class CdkStack(Stack):
             "IdentityProviderAuthArn",
             value=identity_provider_auth_function.function_arn,
             description="ARN of the Fresa auth provider Lambda function",
+        )
+
+        CfnOutput(
+            self,
+            "TestFunctionArn",
+            value=test_function.function_arn,
+            description="ARN of the test Lambda function",
+        )
+
+        CfnOutput(
+            self,
+            "SocialAuthUserArn",
+            value=social_auth_user_function.function_arn,
+            description="ARN of the social auth user Lambda function",
+        )
+
+        CfnOutput(
+            self,
+            "DefineAuthChallengeArn",
+            value=define_auth_challenge_function.function_arn,
+            description="ARN of the define auth challenge Lambda function",
+        )
+
+        CfnOutput(
+            self,
+            "VerifyAuthChallengeArn",
+            value=verify_auth_challenge_function.function_arn,
+            description="ARN of the verify auth challenge Lambda function",
+        )
+
+        CfnOutput(
+            self,
+            "VeriftAuthChallengeArn",
+            value=verift_auth_challenge_function.function_arn,
+            description="ARN of the verift auth challenge Lambda function",
+        )
+
+        CfnOutput(
+            self,
+            "CreateAuthChallengeArn",
+            value=create_auth_challenge_function.function_arn,
+            description="ARN of the create auth challenge Lambda function",
         )
