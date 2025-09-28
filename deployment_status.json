@@ -3,9 +3,9 @@
     "exists": true,
     "arn": "arn:aws:lambda:us-east-1:124355660000:function:recieveEmail",
     "runtime": "python3.13",
-    "handler": "lambda_function.lambda_handler",
+    "handler": "recieveEmail.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-09-28T16:19:25.000+0000",
+    "last_modified": "2025-09-28T16:36:17.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
     "aliases": [
       {
@@ -13,14 +13,14 @@
         "Name": "prod",
         "FunctionVersion": "5",
         "Description": "Production environment",
-        "RevisionId": "7867aca7-8dcc-4179-ad53-44e89c79f2e1"
+        "RevisionId": "ff8813fd-a00b-4477-bb9e-1dc471830f1b"
       },
       {
         "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:recieveEmail:staging",
         "Name": "staging",
-        "FunctionVersion": "6",
+        "FunctionVersion": "7",
         "Description": "Staging environment for pre-production testing",
-        "RevisionId": "7cb896c0-9620-4ff6-be1b-059230866e3d"
+        "RevisionId": "ded64c36-27b3-4f8f-8680-df0a72093a14"
       }
     ]
   },
@@ -28,9 +28,9 @@
     "exists": true,
     "arn": "arn:aws:lambda:us-east-1:124355660000:function:signUpCustomer",
     "runtime": "python3.13",
-    "handler": "lambda_function.lambda_handler",
+    "handler": "signUpCustomer.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-09-28T16:19:36.000+0000",
+    "last_modified": "2025-09-28T16:35:21.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
     "aliases": [
       {
@@ -38,14 +38,14 @@
         "Name": "prod",
         "FunctionVersion": "2",
         "Description": "Production environment",
-        "RevisionId": "63207af9-724f-4e07-a6f9-c699c044e999"
+        "RevisionId": "af3efb09-8ba2-455c-80b4-90191848a19d"
       },
       {
         "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:signUpCustomer:staging",
         "Name": "staging",
         "FunctionVersion": "3",
         "Description": "Staging environment for pre-production testing",
-        "RevisionId": "d35d7749-98c4-4cc4-82e9-4820296d1df4"
+        "RevisionId": "f8165d87-2544-4623-abd1-2729a71aa1c4"
       }
     ]
   },
@@ -105,7 +105,7 @@
     "runtime": "python3.9",
     "handler": "testFunction.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-09-28T16:19:59.000+0000",
+    "last_modified": "2025-09-28T16:35:21.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
     "aliases": [
       {
