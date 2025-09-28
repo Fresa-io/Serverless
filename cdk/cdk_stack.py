@@ -146,18 +146,6 @@ class CdkStack(Stack):
             description="Verify auth challenge function",
         )
 
-        verift_auth_challenge_function = _lambda.Function(
-            self,
-            "VeriftAuthChallengeFunction",
-            function_name=LAMBDA_FUNCTION_NAMES["veriftAuthChallenge"],
-            runtime=_lambda.Runtime.PYTHON_3_9,
-            handler="veriftAuthChallenge.lambda_handler",
-            code=_lambda.Code.from_asset("Lambdas/Authentication/veriftAuthChallenge"),
-            role=lambda_role,
-            timeout=Duration.seconds(30),
-            memory_size=128,
-            description="Verift auth challenge function",
-        )
 
         create_auth_challenge_function = _lambda.Function(
             self,
@@ -229,12 +217,6 @@ class CdkStack(Stack):
             description="ARN of the verify auth challenge Lambda function",
         )
 
-        CfnOutput(
-            self,
-            "VeriftAuthChallengeArn",
-            value=verift_auth_challenge_function.function_arn,
-            description="ARN of the verift auth challenge Lambda function",
-        )
 
         CfnOutput(
             self,
