@@ -364,8 +364,16 @@ class LambdaDeployer:
 
         print(f"🚀 Deploying all functions to {environment} environment...")
 
+        # Get all functions from both config and directory discovery
+        from utils.function_discovery import get_all_functions
+        all_functions = get_all_functions()
+        
+        print(f"📋 Found {len(all_functions)} functions to deploy:")
+        for func in all_functions:
+            print(f"   - {func}")
+
         success = True
-        for function_key in self.functions.keys():
+        for function_key in all_functions:
             print(f"\n📋 Processing function: {function_key}")
             if not self.deploy_function(function_key, environment):
                 success = False
