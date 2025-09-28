@@ -13,7 +13,6 @@ LAMBDA_FUNCTION_NAMES = {
     "social_auth_user": "social_auth_user",
     "defineAuthChallenge": "defineAuthChallenge",
     "verifyAuthChallenge": "verifyAuthChallenge",
-    "veriftAuthChallenge": "veriftAuthChallenge",
     "createAuthChallenge": "createAuthChallenge",
 }
 
