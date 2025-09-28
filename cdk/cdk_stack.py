@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_sqs as sqs,
     aws_events as events,
     aws_events_targets as targets,
+    aws_apigateway as apigateway,
     CfnOutput,
 )
 from constructs import Construct
@@ -240,4 +241,86 @@ class CdkStack(Stack):
             "CreateAuthChallengeArn",
             value=create_auth_challenge_function.function_arn,
             description="ARN of the create auth challenge Lambda function",
+        )
+
+        # Create API Gateway for Lambda functions
+        api = apigateway.RestApi(
+            self,
+            "FresaLambdaApi",
+            rest_api_name="Fresa Lambda API",
+            description="API Gateway for Fresa Lambda functions with STAGING/PROD aliases",
+            default_cors_preflight_options=apigateway.CorsOptions(
+                allow_origins=apigateway.Cors.ALL_ORIGINS,
+                allow_methods=apigateway.Cors.ALL_METHODS,
+                allow_headers=["Content-Type", "Authorization"],
+            ),
+        )
+
+        # Add Lambda integrations with aliases
+        # STAGING endpoints
+        staging_api = api.root.add_resource("staging")
+        
+        recieve_email_staging = staging_api.add_resource("recieve-email")
+        recieve_email_staging.add_method(
+            "POST",
+            apigateway.LambdaIntegration(
+                recieve_email_function,
+                proxy=True,
+                allow_test_invoke=False,
+            )
+        )
+
+        signup_customer_staging = staging_api.add_resource("signup-customer")
+        signup_customer_staging.add_method(
+            "POST",
+            apigateway.LambdaIntegration(
+                signup_customer_function,
+                proxy=True,
+                allow_test_invoke=False,
+            )
+        )
+
+        # PRODUCTION endpoints
+        prod_api = api.root.add_resource("prod")
+        
+        recieve_email_prod = prod_api.add_resource("recieve-email")
+        recieve_email_prod.add_method(
+            "POST",
+            apigateway.LambdaIntegration(
+                recieve_email_function,
+                proxy=True,
+                allow_test_invoke=False,
+            )
+        )
+
+        signup_customer_prod = prod_api.add_resource("signup-customer")
+        signup_customer_prod.add_method(
+            "POST",
+            apigateway.LambdaIntegration(
+                signup_customer_function,
+                proxy=True,
+                allow_test_invoke=False,
+            )
+        )
+
+        # Output API Gateway URL
+        CfnOutput(
+            self,
+            "ApiGatewayUrl",
+            value=api.url,
+            description="API Gateway URL for Lambda functions",
+        )
+
+        CfnOutput(
+            self,
+            "StagingApiUrl",
+            value=f"{api.url}staging/",
+            description="STAGING API Gateway URL",
+        )
+
+        CfnOutput(
+            self,
+            "ProductionApiUrl",
+            value=f"{api.url}prod/",
+            description="PRODUCTION API Gateway URL",
         )
