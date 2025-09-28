@@ -1,0 +1,88 @@
+{
+  "recieveEmail": {
+    "exists": true,
+    "arn": "arn:aws:lambda:us-east-1:124355660000:function:recieveEmail",
+    "runtime": "python3.13",
+    "handler": "lambda_function.lambda_handler",
+    "state": "Active",
+    "last_modified": "2025-07-20T16:52:48.000+0000",
+    "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
+    "aliases": []
+  },
+  "signUpCustomer": {
+    "exists": true,
+    "arn": "arn:aws:lambda:us-east-1:124355660000:function:signUpCustomer",
+    "runtime": "python3.13",
+    "handler": "lambda_function.lambda_handler",
+    "state": "Active",
+    "last_modified": "2025-06-01T22:09:47.000+0000",
+    "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
+    "aliases": []
+  },
+  "verifyCodeAndAuthHandler": {
+    "exists": true,
+    "arn": "arn:aws:lambda:us-east-1:124355660000:function:verifyCodeAndAuthHandler",
+    "runtime": "python3.13",
+    "handler": "lambda_function.lambda_handler",
+    "state": "Active",
+    "last_modified": "2025-07-20T18:17:37.000+0000",
+    "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
+    "aliases": []
+  },
+  "identity_provider_auth": {
+    "exists": true,
+    "arn": "arn:aws:lambda:us-east-1:124355660000:function:identity_provider_auth",
+    "runtime": "python3.13",
+    "handler": "lambda_function.lambda_handler",
+    "state": "Active",
+    "last_modified": "2025-06-24T23:13:53.000+0000",
+    "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
+    "aliases": []
+  },
+  "testFunction": {
+    "exists": false
+  },
+  "social_auth_user": {
+    "exists": true,
+    "arn": "arn:aws:lambda:us-east-1:124355660000:function:social_auth_user",
+    "runtime": "python3.13",
+    "handler": "lambda_function.lambda_handler",
+    "state": "Active",
+    "last_modified": "2025-06-24T23:16:05.000+0000",
+    "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
+    "aliases": []
+  },
+  "defineAuthChallenge": {
+    "exists": true,
+    "arn": "arn:aws:lambda:us-east-1:124355660000:function:defineAuthChallenge",
+    "runtime": "python3.13",
+    "handler": "lambda_function.lambda_handler",
+    "state": "Active",
+    "last_modified": "2025-05-26T03:36:38.000+0000",
+    "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
+    "aliases": []
+  },
+  "verifyAuthChallenge": {
+    "exists": true,
+    "arn": "arn:aws:lambda:us-east-1:124355660000:function:verifyAuthChallenge",
+    "runtime": "python3.13",
+    "handler": "lambda_function.lambda_handler",
+    "state": "Active",
+    "last_modified": "2025-05-30T20:43:14.000+0000",
+    "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
+    "aliases": []
+  },
+  "veriftAuthChallenge": {
+    "exists": false
+  },
+  "createAuthChallenge": {
+    "exists": true,
+    "arn": "arn:aws:lambda:us-east-1:124355660000:function:createAuthChallenge",
+    "runtime": "python3.13",
+    "handler": "lambda_function.lambda_handler",
+    "state": "Active",
+    "last_modified": "2025-05-26T23:20:41.000+0000",
+    "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
+    "aliases": []
+  }
+}

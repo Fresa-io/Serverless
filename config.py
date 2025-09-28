@@ -35,9 +35,10 @@ DEPLOYMENT_ENV = {
 }
 
 # AWS Account and Region Configuration
+# These will be automatically detected from AWS credentials
 AWS_CONFIG = {
-    "account": None,  # Will use CDK_DEFAULT_ACCOUNT if None
-    "region": None,  # Will use CDK_DEFAULT_REGION if None
+    "account": None,  # Will be auto-detected from AWS credentials
+    "region": None,  # Will be auto-detected from AWS_REGION environment variable
 }
 
 # Stack Configuration
@@ -48,7 +49,7 @@ STACK_CONFIG = {
 
 # GitHub Actions Configuration
 GITHUB_CONFIG = {
-    "repository": "Fresa/Serverless",  # Your actual repository
+    "repository": "luissantiago/Serverless",  # Your actual repository
     "branch": "main",
     "environments": ["staging", "production"],
 }

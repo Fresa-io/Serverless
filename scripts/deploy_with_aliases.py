@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import LAMBDA_FUNCTION_NAMES, LAMBDA_ALIASES, DEPLOYMENT_ENV
 from scripts.lambda_alias_manager import LambdaAliasManager
+from utils.aws_utils import get_aws_account_info, get_lambda_execution_role_arn
 
 
 class LambdaDeployer:
@@ -62,6 +63,40 @@ class LambdaDeployer:
 
         print(f"✅ Deployment package created: {output_path}")
         return output_path
+
+    def create_lambda_function(
+        self, function_name: str, zip_path: str, handler: str = None
+    ) -> bool:
+        """Create a new Lambda function"""
+        try:
+            print(f"🆕 Creating new Lambda function: {function_name}...")
+
+            # Default handler if not provided
+            if not handler:
+                handler = f"{function_name}.lambda_handler"
+
+            # Get AWS account ID for role ARN (dynamic detection)
+            role_arn = get_lambda_execution_role_arn()
+
+            # Create the function
+            with open(zip_path, "rb") as zip_file:
+                response = self.lambda_client.create_function(
+                    FunctionName=function_name,
+                    Runtime="python3.9",
+                    Role=role_arn,
+                    Handler=handler,
+                    Code={"ZipFile": zip_file.read()},
+                    Description=f"Lambda function for {function_name}",
+                    Timeout=30,
+                    MemorySize=128,
+                )
+
+            print(f"✅ Successfully created Lambda function: {function_name}")
+            return True
+
+        except Exception as e:
+            print(f"❌ Error creating Lambda function {function_name}: {e}")
+            return False
 
     def update_function_code(self, function_name: str, zip_path: str) -> bool:
         """Update Lambda function code"""
@@ -188,31 +223,53 @@ class LambdaDeployer:
         try:
             self.create_deployment_package(function_dir, zip_path)
 
-            # Check if function code actually changed
-            needs_update = self.function_code_changed(function_name, zip_path)
+            # Check if function exists
+            function_exists = True
+            try:
+                self.lambda_client.get_function(FunctionName=function_name)
+            except self.lambda_client.exceptions.ResourceNotFoundException:
+                function_exists = False
+                print(f"🆕 Function {function_name} does not exist. Will create it.")
 
-            if needs_update:
-                # Update function code
-                if not self.update_function_code(function_name, zip_path):
+            if function_exists:
+                # Function exists, check if code changed
+                needs_update = self.function_code_changed(function_name, zip_path)
+
+                if needs_update:
+                    # Update function code
+                    if not self.update_function_code(function_name, zip_path):
+                        return False
+
+                    # Wait for update to complete
+                    if not self.wait_for_function_update(function_name):
+                        return False
+
+                    # Publish new version
+                    version = self.alias_manager.publish_version(
+                        function_name, f"Deployed to {environment} environment"
+                    )
+                else:
+                    print(
+                        f"⏭️  No changes detected for {function_name}, skipping deployment"
+                    )
+                    # Get current alias version
+                    alias_info = self.alias_manager.get_alias_info(
+                        function_name, alias_name
+                    )
+                    version = alias_info["FunctionVersion"] if alias_info else None
+            else:
+                # Function doesn't exist, create it
+                if not self.create_lambda_function(function_name, zip_path):
                     return False
 
-                # Wait for update to complete
+                # Wait for function to be active
                 if not self.wait_for_function_update(function_name):
                     return False
 
-                # Publish new version
+                # Publish initial version
                 version = self.alias_manager.publish_version(
-                    function_name, f"Deployed to {environment} environment"
+                    function_name, f"Initial deployment to {environment} environment"
                 )
-            else:
-                print(
-                    f"⏭️  No changes detected for {function_name}, skipping deployment"
-                )
-                # Get current alias version
-                alias_info = self.alias_manager.get_alias_info(
-                    function_name, alias_name
-                )
-                version = alias_info["FunctionVersion"] if alias_info else None
 
             if not version:
                 return False
