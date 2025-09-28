@@ -136,6 +136,8 @@ class LambdaDeployer:
 
                 if state == "Active":
                     print(f"✅ Function {function_name} is now active")
+                    # Additional wait to ensure function is fully ready
+                    time.sleep(10)
                     return True
                 elif state == "Failed":
                     print(f"❌ Function {function_name} update failed")
@@ -149,6 +151,64 @@ class LambdaDeployer:
                 time.sleep(5)
 
         print(f"⏰ Timeout waiting for function update")
+        return False
+
+    def publish_version_with_retry(self, function_name: str, description: str, max_retries: int = 5) -> Optional[str]:
+        """Publish version with retry mechanism to handle ResourceConflictException"""
+        import time
+        
+        for attempt in range(max_retries):
+            try:
+                print(f"📦 Publishing version for {function_name} (attempt {attempt + 1}/{max_retries})...")
+                version = self.alias_manager.publish_version(function_name, description)
+                if version:
+                    print(f"✅ Published version {version} for {function_name}")
+                    return version
+            except Exception as e:
+                if "ResourceConflictException" in str(e):
+                    print(f"⏳ Function still updating, waiting 15 seconds before retry...")
+                    time.sleep(15)
+                    continue
+                else:
+                    print(f"❌ Error publishing version for {function_name}: {e}")
+                    return None
+        
+        print(f"❌ Failed to publish version for {function_name} after {max_retries} attempts")
+        return None
+
+    def create_alias_with_retry(self, function_name: str, alias_name: str, version: str, description: str, max_retries: int = 3) -> bool:
+        """Create alias with retry mechanism"""
+        import time
+        
+        for attempt in range(max_retries):
+            try:
+                print(f"🏷️  Creating alias {alias_name} for {function_name} (attempt {attempt + 1}/{max_retries})...")
+                success = self.alias_manager.create_alias(function_name, alias_name, version, description)
+                if success:
+                    print(f"✅ Created alias {alias_name} → v{version}")
+                    return True
+            except Exception as e:
+                if "ResourceConflictException" in str(e) and "already exists" in str(e):
+                    print(f"✅ Alias {alias_name} already exists, updating...")
+                    # Try to update existing alias
+                    try:
+                        self.lambda_client.update_alias(
+                            FunctionName=function_name,
+                            Name=alias_name,
+                            FunctionVersion=version,
+                            Description=description
+                        )
+                        print(f"✅ Updated alias {alias_name} → v{version}")
+                        return True
+                    except Exception as update_error:
+                        print(f"❌ Error updating alias: {update_error}")
+                        return False
+                else:
+                    print(f"⏳ Error creating alias, waiting 5 seconds before retry...")
+                    time.sleep(5)
+                    continue
+        
+        print(f"❌ Failed to create alias {alias_name} for {function_name} after {max_retries} attempts")
         return False
 
     def function_code_changed(self, function_name: str, zip_path: str) -> bool:
@@ -244,8 +304,8 @@ class LambdaDeployer:
                     if not self.wait_for_function_update(function_name):
                         return False
 
-                    # Publish new version
-                    version = self.alias_manager.publish_version(
+                    # Publish new version with retry
+                    version = self.publish_version_with_retry(
                         function_name, f"Deployed to {environment} environment"
                     )
                 else:
@@ -266,16 +326,16 @@ class LambdaDeployer:
                 if not self.wait_for_function_update(function_name):
                     return False
 
-                # Publish initial version
-                version = self.alias_manager.publish_version(
+                # Publish initial version with retry
+                version = self.publish_version_with_retry(
                     function_name, f"Initial deployment to {environment} environment"
                 )
 
             if not version:
                 return False
 
-            # Update alias
-            if not self.alias_manager.create_alias(
+            # Update alias with retry
+            if not self.create_alias_with_retry(
                 function_name, alias_name, version, env_config["description"]
             ):
                 return False
