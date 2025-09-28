@@ -15,21 +15,21 @@ def get_aws_account_info() -> Dict[str, str]:
     Returns account ID, region, and user ARN
     """
     try:
-        sts_client = boto3.client('sts')
+        sts_client = boto3.client("sts")
         identity = sts_client.get_caller_identity()
-        
+
         # Get region from environment or default
         region = (
-            os.environ.get('AWS_REGION') or 
-            os.environ.get('CDK_DEFAULT_REGION') or 
-            'us-east-1'
+            os.environ.get("AWS_REGION")
+            or os.environ.get("CDK_DEFAULT_REGION")
+            or "us-east-1"
         )
-        
+
         return {
-            'account_id': identity['Account'],
-            'region': region,
-            'user_arn': identity['Arn'],
-            'user_id': identity['UserId']
+            "account_id": identity["Account"],
+            "region": region,
+            "user_arn": identity["Arn"],
+            "user_id": identity["UserId"],
         }
     except Exception as e:
         raise Exception(f"Failed to get AWS account info: {e}")
@@ -38,9 +38,9 @@ def get_aws_account_info() -> Dict[str, str]:
 def get_aws_region() -> str:
     """Get AWS region from environment variables or default"""
     return (
-        os.environ.get('AWS_REGION') or 
-        os.environ.get('CDK_DEFAULT_REGION') or 
-        'us-east-1'
+        os.environ.get("AWS_REGION")
+        or os.environ.get("CDK_DEFAULT_REGION")
+        or "us-east-1"
     )
 
 
@@ -57,7 +57,7 @@ def verify_aws_credentials() -> bool:
     Verify that AWS credentials are working
     """
     try:
-        sts_client = boto3.client('sts')
+        sts_client = boto3.client("sts")
         sts_client.get_caller_identity()
         return True
     except Exception:

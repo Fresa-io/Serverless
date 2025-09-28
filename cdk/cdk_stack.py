@@ -25,16 +25,20 @@ class CdkStack(Stack):
 
         # Create Lambda execution role
         lambda_role = iam.Role(
-            self, "LambdaExecutionRole",
+            self,
+            "LambdaExecutionRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
             managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
-            ]
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AWSLambdaBasicExecutionRole"
+                )
+            ],
         )
 
         # Create Lambda functions from source code
         recieve_email_function = _lambda.Function(
-            self, "RecieveEmailFunction",
+            self,
+            "RecieveEmailFunction",
             function_name=LAMBDA_FUNCTION_NAMES["recieveEmail"],
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="recieveEmail.lambda_handler",
@@ -42,11 +46,12 @@ class CdkStack(Stack):
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=128,
-            description="Fresa email processing function"
+            description="Fresa email processing function",
         )
 
         signup_customer_function = _lambda.Function(
-            self, "SignUpCustomerFunction",
+            self,
+            "SignUpCustomerFunction",
             function_name=LAMBDA_FUNCTION_NAMES["signUpCustomer"],
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="signUpCustomer.lambda_handler",
@@ -54,36 +59,43 @@ class CdkStack(Stack):
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=128,
-            description="Fresa customer signup function"
+            description="Fresa customer signup function",
         )
 
         verify_code_auth_function = _lambda.Function(
-            self, "VerifyCodeAndAuthHandlerFunction",
+            self,
+            "VerifyCodeAndAuthHandlerFunction",
             function_name=LAMBDA_FUNCTION_NAMES["verifyCodeAndAuthHandler"],
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="verifyCodeAndAuthHandler.lambda_handler",
-            code=_lambda.Code.from_asset("Lambdas/Authentication/verifyCodeAndAuthHandler"),
+            code=_lambda.Code.from_asset(
+                "Lambdas/Authentication/verifyCodeAndAuthHandler"
+            ),
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=128,
-            description="Fresa verification function"
+            description="Fresa verification function",
         )
 
         identity_provider_auth_function = _lambda.Function(
-            self, "IdentityProviderAuthFunction",
+            self,
+            "IdentityProviderAuthFunction",
             function_name=LAMBDA_FUNCTION_NAMES["identity_provider_auth"],
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="identity_provider_auth.lambda_handler",
-            code=_lambda.Code.from_asset("Lambdas/Authentication/identity_provider_auth"),
+            code=_lambda.Code.from_asset(
+                "Lambdas/Authentication/identity_provider_auth"
+            ),
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=128,
-            description="Fresa auth provider function"
+            description="Fresa auth provider function",
         )
 
         # Create additional functions
         test_function = _lambda.Function(
-            self, "TestFunction",
+            self,
+            "TestFunction",
             function_name=LAMBDA_FUNCTION_NAMES["testFunction"],
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="testFunction.lambda_handler",
@@ -91,11 +103,12 @@ class CdkStack(Stack):
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=128,
-            description="Test function"
+            description="Test function",
         )
 
         social_auth_user_function = _lambda.Function(
-            self, "SocialAuthUserFunction",
+            self,
+            "SocialAuthUserFunction",
             function_name=LAMBDA_FUNCTION_NAMES["social_auth_user"],
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="social_auth_user.lambda_handler",
@@ -103,11 +116,12 @@ class CdkStack(Stack):
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=128,
-            description="Social auth user function"
+            description="Social auth user function",
         )
 
         define_auth_challenge_function = _lambda.Function(
-            self, "DefineAuthChallengeFunction",
+            self,
+            "DefineAuthChallengeFunction",
             function_name=LAMBDA_FUNCTION_NAMES["defineAuthChallenge"],
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="defineAuthChallenge.lambda_handler",
@@ -115,11 +129,12 @@ class CdkStack(Stack):
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=128,
-            description="Define auth challenge function"
+            description="Define auth challenge function",
         )
 
         verify_auth_challenge_function = _lambda.Function(
-            self, "VerifyAuthChallengeFunction",
+            self,
+            "VerifyAuthChallengeFunction",
             function_name=LAMBDA_FUNCTION_NAMES["verifyAuthChallenge"],
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="verifyAuthChallenge.lambda_handler",
@@ -127,11 +142,12 @@ class CdkStack(Stack):
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=128,
-            description="Verify auth challenge function"
+            description="Verify auth challenge function",
         )
 
         verift_auth_challenge_function = _lambda.Function(
-            self, "VeriftAuthChallengeFunction",
+            self,
+            "VeriftAuthChallengeFunction",
             function_name=LAMBDA_FUNCTION_NAMES["veriftAuthChallenge"],
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="veriftAuthChallenge.lambda_handler",
@@ -139,11 +155,12 @@ class CdkStack(Stack):
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=128,
-            description="Verift auth challenge function"
+            description="Verift auth challenge function",
         )
 
         create_auth_challenge_function = _lambda.Function(
-            self, "CreateAuthChallengeFunction",
+            self,
+            "CreateAuthChallengeFunction",
             function_name=LAMBDA_FUNCTION_NAMES["createAuthChallenge"],
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="createAuthChallenge.lambda_handler",
@@ -151,7 +168,7 @@ class CdkStack(Stack):
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=128,
-            description="Create auth challenge function"
+            description="Create auth challenge function",
         )
 
         # Output the function ARNs for reference

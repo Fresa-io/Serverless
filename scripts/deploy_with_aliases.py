@@ -64,34 +64,36 @@ class LambdaDeployer:
         print(f"✅ Deployment package created: {output_path}")
         return output_path
 
-    def create_lambda_function(self, function_name: str, zip_path: str, handler: str = None) -> bool:
+    def create_lambda_function(
+        self, function_name: str, zip_path: str, handler: str = None
+    ) -> bool:
         """Create a new Lambda function"""
         try:
             print(f"🆕 Creating new Lambda function: {function_name}...")
-            
+
             # Default handler if not provided
             if not handler:
                 handler = f"{function_name}.lambda_handler"
-            
+
             # Get AWS account ID for role ARN (dynamic detection)
             role_arn = get_lambda_execution_role_arn()
-            
+
             # Create the function
             with open(zip_path, "rb") as zip_file:
                 response = self.lambda_client.create_function(
                     FunctionName=function_name,
-                    Runtime='python3.9',
+                    Runtime="python3.9",
                     Role=role_arn,
                     Handler=handler,
-                    Code={'ZipFile': zip_file.read()},
-                    Description=f'Lambda function for {function_name}',
+                    Code={"ZipFile": zip_file.read()},
+                    Description=f"Lambda function for {function_name}",
                     Timeout=30,
-                    MemorySize=128
+                    MemorySize=128,
                 )
-            
+
             print(f"✅ Successfully created Lambda function: {function_name}")
             return True
-            
+
         except Exception as e:
             print(f"❌ Error creating Lambda function {function_name}: {e}")
             return False
