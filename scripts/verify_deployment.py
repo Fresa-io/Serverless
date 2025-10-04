@@ -13,6 +13,7 @@ from typing import Dict, List
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import LAMBDA_FUNCTION_NAMES
 from utils.aws_utils import get_aws_account_info, print_aws_info
+from utils.config_loader import setup_aws_environment
 
 
 def verify_lambda_functions():
@@ -20,6 +21,9 @@ def verify_lambda_functions():
     print("🔍 Verifying Lambda Functions Deployment")
     print("=" * 50)
 
+    # Setup AWS credentials from environment variables
+    setup_aws_environment()
+    
     lambda_client = boto3.client("lambda")
     results = {}
 

@@ -13,14 +13,14 @@
         "Name": "prod",
         "FunctionVersion": "5",
         "Description": "Production environment",
-        "RevisionId": "ff8813fd-a00b-4477-bb9e-1dc471830f1b"
+        "RevisionId": "31fcce52-8239-482e-a96b-520e0dd63526"
       },
       {
         "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:recieveEmail:staging",
         "Name": "staging",
         "FunctionVersion": "7",
         "Description": "Staging environment for pre-production testing",
-        "RevisionId": "ded64c36-27b3-4f8f-8680-df0a72093a14"
+        "RevisionId": "152e4733-6365-4ab8-81af-23d8f95c92ae"
       }
     ]
   },
@@ -38,14 +38,14 @@
         "Name": "prod",
         "FunctionVersion": "2",
         "Description": "Production environment",
-        "RevisionId": "af3efb09-8ba2-455c-80b4-90191848a19d"
+        "RevisionId": "9602f267-a2ee-4a67-840b-7795f3f4bbf7"
       },
       {
         "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:signUpCustomer:staging",
         "Name": "staging",
         "FunctionVersion": "3",
         "Description": "Staging environment for pre-production testing",
-        "RevisionId": "f8165d87-2544-4623-abd1-2729a71aa1c4"
+        "RevisionId": "86332151-a58d-4856-97f9-57bc1d75c3e8"
       }
     ]
   },
@@ -53,9 +53,9 @@
     "exists": true,
     "arn": "arn:aws:lambda:us-east-1:124355660000:function:verifyCodeAndAuthHandler",
     "runtime": "python3.13",
-    "handler": "lambda_function.lambda_handler",
+    "handler": "verifyCodeAndAuthHandler.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-09-28T16:20:22.000+0000",
+    "last_modified": "2025-10-04T16:07:44.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
     "aliases": [
       {
@@ -63,14 +63,14 @@
         "Name": "prod",
         "FunctionVersion": "2",
         "Description": "Production environment",
-        "RevisionId": "42c1f82c-5af8-4c6c-975e-ed3f6cffd5c4"
+        "RevisionId": "4238fadc-93d4-47f6-ab24-e259f3c6d1ff"
       },
       {
         "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:verifyCodeAndAuthHandler:staging",
         "Name": "staging",
         "FunctionVersion": "3",
         "Description": "Staging environment for pre-production testing",
-        "RevisionId": "be4f4cfb-a33d-4ae8-8386-049ff29b71d5"
+        "RevisionId": "98cd5030-b972-4df6-971a-8fe1f39f47e6"
       }
     ]
   },
@@ -88,14 +88,14 @@
         "Name": "prod",
         "FunctionVersion": "2",
         "Description": "Production environment",
-        "RevisionId": "75351b7f-8748-4630-a20c-5ddff089e7cf"
+        "RevisionId": "8f40a81f-409d-4607-b28d-e5fc2385fd88"
       },
       {
         "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:identity_provider_auth:staging",
         "Name": "staging",
         "FunctionVersion": "3",
         "Description": "Staging environment for pre-production testing",
-        "RevisionId": "58c0ae5d-5ba4-4d2d-aa84-cbbbbd3ff78a"
+        "RevisionId": "017edcd5-a0d4-4bdf-9b88-7aaf46583ff4"
       }
     ]
   },
@@ -138,14 +138,14 @@
         "Name": "prod",
         "FunctionVersion": "2",
         "Description": "Production environment",
-        "RevisionId": "a4578fb3-46e3-43ac-8af0-30351aa636b9"
+        "RevisionId": "681d2f59-6e20-45b9-80e7-d7c450818898"
       },
       {
         "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:social_auth_user:staging",
         "Name": "staging",
         "FunctionVersion": "3",
         "Description": "Staging environment for pre-production testing",
-        "RevisionId": "6dda160a-dbd3-4b35-bd45-045f80f439e5"
+        "RevisionId": "e14dd674-13ae-4438-bf04-83d16e46fe4e"
       }
     ]
   },

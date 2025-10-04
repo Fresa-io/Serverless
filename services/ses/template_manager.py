@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-SES Template Manager
-Handles creation, update, and removal of SES email templates
+Fresa SES Template Manager
+Integrates the user's original SES template scripts into the modular system
 """
 
 import boto3
@@ -15,6 +15,12 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from utils.aws_utils import get_aws_account_info, print_aws_info
+
+# Import the user's original scripts
+from services.ses.create_verification_template import create_ses_template_with_logo
+from services.ses.create_welcome_template import create_welcome_template_with_logo, get_gendered_template_data
+from services.ses.remove_template import delete_ses_template
+from services.ses.test_aws_credentials import test_aws_credentials
 
 
 class SESTemplateManager:
@@ -124,79 +130,45 @@ def load_template_from_file(template_path: str) -> Dict:
 
 
 def create_default_templates():
-    """Create default SES templates for the application"""
-    manager = SESTemplateManager()
+    """Create default SES templates using the user's original scripts"""
+    print("🍓 Creating Fresa SES Templates")
+    print("=" * 40)
     
-    # Fresa verification template
-    verification_template = {
-        'template_name': 'fresa-verificacion-template',
-        'subject': 'Verificación de Email - Fresa',
-        'html_content': '''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>Verificación de Email</title>
-        </head>
-        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #2c3e50;">🍓 Fresa</h1>
-            </div>
-            
-            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h2 style="color: #2c3e50; margin-top: 0;">Verificación de Email</h2>
-                <p>Hola,</p>
-                <p>Para completar tu registro en Fresa, por favor verifica tu dirección de email haciendo clic en el siguiente enlace:</p>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="{{verification_link}}" 
-                       style="background-color: #e74c3c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                        Verificar Email
-                    </a>
-                </div>
-                
-                <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
-                <p style="word-break: break-all; color: #666;">{{verification_link}}</p>
-                
-                <p>Este enlace expirará en 24 horas.</p>
-            </div>
-            
-            <div style="text-align: center; color: #666; font-size: 12px;">
-                <p>Si no solicitaste este email, puedes ignorarlo de forma segura.</p>
-                <p>© 2025 Fresa. Todos los derechos reservados.</p>
-            </div>
-        </body>
-        </html>
-        ''',
-        'text_content': '''
-        Verificación de Email - Fresa
-        
-        Hola,
-        
-        Para completar tu registro en Fresa, por favor verifica tu dirección de email visitando el siguiente enlace:
-        
-        {{verification_link}}
-        
-        Este enlace expirará en 24 horas.
-        
-        Si no solicitaste este email, puedes ignorarlo de forma segura.
-        
-        © 2025 Fresa. Todos los derechos reservados.
-        '''
-    }
+    # Print AWS info
+    print_aws_info()
     
-    # Create the template
-    success = manager.create_or_update_template(
-        verification_template['template_name'],
-        verification_template['subject'],
-        verification_template['html_content'],
-        verification_template['text_content']
+    success = True
+    
+    # Create verification template using user's script
+    print("\n📧 Creating verification template...")
+    verification_result = create_ses_template_with_logo(
+        template_name='fresa-verificacion-template',
+        logo_url='https://fresaassets.s3.us-east-1.amazonaws.com/fresaicon.png'
     )
     
-    if success:
-        print("✅ Default SES templates created successfully")
+    if verification_result:
+        print("✅ Verification template created successfully")
     else:
-        print("❌ Failed to create default SES templates")
+        print("❌ Failed to create verification template")
+        success = False
+    
+    # Create welcome template using user's script
+    print("\n📧 Creating welcome template...")
+    welcome_result = create_welcome_template_with_logo(
+        template_name='fresa-welcome-template',
+        logo_url='https://fresaassets.s3.us-east-1.amazonaws.com/fresaicon.png'
+    )
+    
+    if welcome_result:
+        print("✅ Welcome template created successfully")
+    else:
+        print("❌ Failed to create welcome template")
+        success = False
+    
+    if success:
+        print("\n🎉 All Fresa SES templates created successfully!")
+    else:
+        print("\n❌ Some templates failed to create")
     
     return success
 
@@ -204,6 +176,8 @@ def create_default_templates():
 def main():
     """Command line interface"""
     if len(sys.argv) < 2:
+        print("🍓 Fresa SES Template Manager")
+        print("=" * 40)
         print("Usage:")
         print("  python services/ses/template_manager.py list")
         print("  python services/ses/template_manager.py get <template_name>")
@@ -211,6 +185,9 @@ def main():
         print("  python services/ses/template_manager.py update <template_name> <subject> <html_content> [text_content]")
         print("  python services/ses/template_manager.py delete <template_name>")
         print("  python services/ses/template_manager.py create-defaults")
+        print("  python services/ses/template_manager.py create-verification")
+        print("  python services/ses/template_manager.py create-welcome")
+        print("  python services/ses/template_manager.py test-credentials")
         sys.exit(1)
     
     command = sys.argv[1]
@@ -279,6 +256,31 @@ def main():
     
     elif command == "create-defaults":
         create_default_templates()
+    
+    elif command == "create-verification":
+        print("📧 Creating verification template...")
+        result = create_ses_template_with_logo(
+            template_name='fresa-verificacion-template',
+            logo_url='https://fresaassets.s3.us-east-1.amazonaws.com/fresaicon.png'
+        )
+        if result:
+            print("✅ Verification template created successfully!")
+        else:
+            print("❌ Failed to create verification template")
+    
+    elif command == "create-welcome":
+        print("📧 Creating welcome template...")
+        result = create_welcome_template_with_logo(
+            template_name='fresa-welcome-template',
+            logo_url='https://fresaassets.s3.us-east-1.amazonaws.com/fresaicon.png'
+        )
+        if result:
+            print("✅ Welcome template created successfully!")
+        else:
+            print("❌ Failed to create welcome template")
+    
+    elif command == "test-credentials":
+        test_aws_credentials()
     
     else:
         print(f"❌ Unknown command: {command}")

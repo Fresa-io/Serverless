@@ -36,6 +36,37 @@ class CdkStack(Stack):
             ],
         )
 
+        # Add DynamoDB permissions
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan"
+                ],
+                resources=["*"]  # You may want to restrict this to specific table ARNs
+            )
+        )
+
+        # Add Cognito permissions
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "cognito-idp:AdminGetUser",
+                    "cognito-idp:InitiateAuth",
+                    "cognito-idp:RespondToAuthChallenge",
+                    "cognito-idp:AdminCreateUser",
+                    "cognito-idp:AdminSetUserPassword"
+                ],
+                resources=["*"]  # You may want to restrict this to specific user pool ARNs
+            )
+        )
+
         # Create Lambda functions from source code
         recieve_email_function = _lambda.Function(
             self,
@@ -76,6 +107,12 @@ class CdkStack(Stack):
             timeout=Duration.seconds(30),
             memory_size=128,
             description="Fresa verification function",
+            environment={
+                "COGNITO_CLIENT_ID": "your-cognito-client-id",  # Replace with actual client ID
+                "COGNITO_USER_POOL_ID": "your-user-pool-id",    # Replace with actual user pool ID
+                "DYNAMODB_TABLE_NAME": "your-dynamodb-table",   # Replace with actual table name
+                "CODE_EXPIRATION_MINUTES": "5"
+            }
         )
 
         identity_provider_auth_function = _lambda.Function(
