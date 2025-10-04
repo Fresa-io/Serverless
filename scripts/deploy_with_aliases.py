@@ -32,11 +32,9 @@ class LambdaDeployer:
         if region is None:
             region = os.environ.get("AWS_REGION", "us-east-1")
 
-        # Check if we're in CI/dry-run mode
-        self.ci_mode = (
-            os.environ.get("CI")
-            or os.environ.get("GITHUB_ACTIONS")
-            or os.environ.get("DRY_RUN")
+        # Check if we're in dry-run mode (only for explicit dry-run, not CI)
+        self.ci_mode = os.environ.get("DRY_RUN") or os.environ.get(
+            "SKIP_AWS_VALIDATION"
         )
 
         if not self.ci_mode:
@@ -482,7 +480,7 @@ class LambdaDeployer:
 
 def main():
     """Main function for command line usage"""
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or sys.argv[1] in ["--help", "-h", "help"]:
         print("🚀 Lambda Deployer with Alias Management")
         print("")
         print("Usage:")
@@ -510,9 +508,17 @@ def main():
         return
 
     command = sys.argv[1]
-    deployer = LambdaDeployer()
+
+    # Only initialize deployer for actual deployment commands
+    if command in ["deploy", "deploy-all", "promote", "status", "rollback"]:
+        deployer = LambdaDeployer()
+    else:
+        deployer = None
 
     if command == "deploy":
+        if not deployer:
+            print("❌ Deployer not initialized")
+            return
         if len(sys.argv) < 4:
             print("❌ deploy command requires: function_key environment")
             return
@@ -523,6 +529,9 @@ def main():
         deployer.deploy_function(function_key, environment)
 
     elif command == "deploy-all":
+        if not deployer:
+            print("❌ Deployer not initialized")
+            return
         if len(sys.argv) < 3:
             print("❌ deploy-all command requires: environment")
             return
@@ -531,6 +540,9 @@ def main():
         deployer.deploy_all_functions(environment)
 
     elif command == "promote":
+        if not deployer:
+            print("❌ Deployer not initialized")
+            return
         if len(sys.argv) != 5:
             print("❌ promote command requires: function_key source_env target_env")
             return
@@ -542,6 +554,9 @@ def main():
         deployer.promote_environment(function_key, source_env, target_env)
 
     elif command == "status":
+        if not deployer:
+            print("❌ Deployer not initialized")
+            return
         deployer.list_deployment_status()
 
     else:
