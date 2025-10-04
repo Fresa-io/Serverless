@@ -26,12 +26,8 @@ class LambdaAliasManager:
         if region is None:
             region = os.environ.get("AWS_REGION", "us-east-1")
 
-        # Check if we're in CI/dry-run mode
-        self.ci_mode = (
-            os.environ.get("CI")
-            or os.environ.get("GITHUB_ACTIONS")
-            or os.environ.get("DRY_RUN")
-        )
+        # Check if we're in dry-run mode (only for explicit dry-run, not CI)
+        self.ci_mode = os.environ.get("DRY_RUN") or os.environ.get("SKIP_AWS_VALIDATION")
 
         if not self.ci_mode:
             self.lambda_client = boto3.client("lambda", region_name=region)

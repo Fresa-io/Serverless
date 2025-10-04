@@ -102,12 +102,9 @@ def setup_aws_environment() -> None:
 
     except ValueError as e:
         # Check if we're in a CI environment or dry-run mode
-        if (
-            os.environ.get("CI")
-            or os.environ.get("GITHUB_ACTIONS")
-            or os.environ.get("DRY_RUN")
-        ):
-            print(f"⚠️  Running in CI/dry-run mode - AWS credentials not required")
+        # Only skip if explicitly in dry-run mode or missing AWS credentials
+        if os.environ.get("DRY_RUN") or os.environ.get("SKIP_AWS_VALIDATION"):
+            print(f"⚠️  Running in dry-run mode - AWS credentials not required")
             print(f"   Skipping AWS credential validation")
             return
 
