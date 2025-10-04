@@ -23,7 +23,7 @@ def verify_lambda_functions():
 
     # Setup AWS credentials from environment variables
     setup_aws_environment()
-    
+
     lambda_client = boto3.client("lambda")
     results = {}
 

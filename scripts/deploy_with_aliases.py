@@ -27,7 +27,7 @@ class LambdaDeployer:
         """Initialize the Lambda deployer"""
         # Setup AWS credentials from environment variables
         setup_aws_environment()
-        
+
         # Use environment variable or default region if none provided
         if region is None:
             region = os.environ.get("AWS_REGION", "us-east-1")
@@ -153,37 +153,56 @@ class LambdaDeployer:
         print(f"⏰ Timeout waiting for function update")
         return False
 
-    def publish_version_with_retry(self, function_name: str, description: str, max_retries: int = 5) -> Optional[str]:
+    def publish_version_with_retry(
+        self, function_name: str, description: str, max_retries: int = 5
+    ) -> Optional[str]:
         """Publish version with retry mechanism to handle ResourceConflictException"""
         import time
-        
+
         for attempt in range(max_retries):
             try:
-                print(f"📦 Publishing version for {function_name} (attempt {attempt + 1}/{max_retries})...")
+                print(
+                    f"📦 Publishing version for {function_name} (attempt {attempt + 1}/{max_retries})..."
+                )
                 version = self.alias_manager.publish_version(function_name, description)
                 if version:
                     print(f"✅ Published version {version} for {function_name}")
                     return version
             except Exception as e:
                 if "ResourceConflictException" in str(e):
-                    print(f"⏳ Function still updating, waiting 15 seconds before retry...")
+                    print(
+                        f"⏳ Function still updating, waiting 15 seconds before retry..."
+                    )
                     time.sleep(15)
                     continue
                 else:
                     print(f"❌ Error publishing version for {function_name}: {e}")
                     return None
-        
-        print(f"❌ Failed to publish version for {function_name} after {max_retries} attempts")
+
+        print(
+            f"❌ Failed to publish version for {function_name} after {max_retries} attempts"
+        )
         return None
 
-    def create_alias_with_retry(self, function_name: str, alias_name: str, version: str, description: str, max_retries: int = 3) -> bool:
+    def create_alias_with_retry(
+        self,
+        function_name: str,
+        alias_name: str,
+        version: str,
+        description: str,
+        max_retries: int = 3,
+    ) -> bool:
         """Create alias with retry mechanism"""
         import time
-        
+
         for attempt in range(max_retries):
             try:
-                print(f"🏷️  Creating alias {alias_name} for {function_name} (attempt {attempt + 1}/{max_retries})...")
-                success = self.alias_manager.create_alias(function_name, alias_name, version, description)
+                print(
+                    f"🏷️  Creating alias {alias_name} for {function_name} (attempt {attempt + 1}/{max_retries})..."
+                )
+                success = self.alias_manager.create_alias(
+                    function_name, alias_name, version, description
+                )
                 if success:
                     print(f"✅ Created alias {alias_name} → v{version}")
                     return True
@@ -196,7 +215,7 @@ class LambdaDeployer:
                             FunctionName=function_name,
                             Name=alias_name,
                             FunctionVersion=version,
-                            Description=description
+                            Description=description,
                         )
                         print(f"✅ Updated alias {alias_name} → v{version}")
                         return True
@@ -207,8 +226,10 @@ class LambdaDeployer:
                     print(f"⏳ Error creating alias, waiting 5 seconds before retry...")
                     time.sleep(5)
                     continue
-        
-        print(f"❌ Failed to create alias {alias_name} for {function_name} after {max_retries} attempts")
+
+        print(
+            f"❌ Failed to create alias {alias_name} for {function_name} after {max_retries} attempts"
+        )
         return False
 
     def function_code_changed(self, function_name: str, zip_path: str) -> bool:
@@ -366,8 +387,9 @@ class LambdaDeployer:
 
         # Get all functions from both config and directory discovery
         from utils.function_discovery import get_all_functions
+
         all_functions = get_all_functions()
-        
+
         print(f"📋 Found {len(all_functions)} functions to deploy:")
         for func in all_functions:
             print(f"   - {func}")

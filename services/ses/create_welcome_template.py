@@ -10,7 +10,9 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from utils.aws_utils import get_aws_account_info, print_aws_info
 
@@ -19,8 +21,8 @@ def create_welcome_template_with_logo(template_name, logo_url):
     """
     Create or update a welcome email template with a logo
     """
-    subject = 'Fresa: ¡{{greeting}} {{name}}! 🎉'
-    
+    subject = "Fresa: ¡{{greeting}} {{name}}! 🎉"
+
     html_body = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -156,7 +158,7 @@ def create_welcome_template_with_logo(template_name, logo_url):
 </body>
 </html>
 """
-    
+
     text_body = """¡Hola {{name}}!
 
 ¡{{greeting}} a la familia Fresa!
@@ -178,15 +180,17 @@ support@fresa.live
 © 2025 Fresa. Todos los derechos reservados.
 """
 
-    ses_client = boto3.client('ses', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-    
+    ses_client = boto3.client(
+        "ses", region_name=os.environ.get("AWS_REGION", "us-east-1")
+    )
+
     try:
         response = ses_client.update_template(
             Template={
-                'TemplateName': template_name,
-                'SubjectPart': subject,
-                'HtmlPart': html_body,
-                'TextPart': text_body
+                "TemplateName": template_name,
+                "SubjectPart": subject,
+                "HtmlPart": html_body,
+                "TextPart": text_body,
             }
         )
         print(f"✅ Welcome template actualizado con éxito: {template_name}")
@@ -196,10 +200,10 @@ support@fresa.live
         try:
             response = ses_client.create_template(
                 Template={
-                    'TemplateName': template_name,
-                    'SubjectPart': subject,
-                    'HtmlPart': html_body,
-                    'TextPart': text_body
+                    "TemplateName": template_name,
+                    "SubjectPart": subject,
+                    "HtmlPart": html_body,
+                    "TextPart": text_body,
                 }
             )
             print(f"✅ Welcome template creado con éxito: {template_name}")
@@ -218,20 +222,16 @@ def get_gendered_template_data(name, gender):
     """
     # Common data for all users
     template_data = {
-        'name': name,
-        'excitement_message': 'Estamos emocionados de tenerte con nosotros'
+        "name": name,
+        "excitement_message": "Estamos emocionados de tenerte con nosotros",
     }
-    
+
     # Gender-specific customizations
-    if gender.lower() == 'female':
-        template_data.update({
-            'greeting': 'Bienvenida'
-        })
+    if gender.lower() == "female":
+        template_data.update({"greeting": "Bienvenida"})
     else:  # default to male
-        template_data.update({
-            'greeting': 'Bienvenido'
-        })
-    
+        template_data.update({"greeting": "Bienvenido"})
+
     return template_data
 
 
@@ -239,24 +239,23 @@ def main():
     """Main function to create welcome template"""
     print("🍓 Fresa SES Welcome Template Creator")
     print("=" * 50)
-    
+
     # Print AWS info
     print_aws_info()
-    
+
     # Use the EXACT S3 URL format from your original script
-    logo_url = 'https://fresaassets.s3.us-east-1.amazonaws.com/fresaicon.png'
-    
+    logo_url = "https://fresaassets.s3.us-east-1.amazonaws.com/fresaicon.png"
+
     # Create the welcome template
     result = create_welcome_template_with_logo(
-        template_name='fresa-welcome-template',
-        logo_url=logo_url
+        template_name="fresa-welcome-template", logo_url=logo_url
     )
-    
+
     if result:
         print("\n🎉 Welcome template created/updated successfully!")
     else:
         print("\n❌ Failed to create/update welcome template")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

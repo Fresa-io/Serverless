@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 # Add services to path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'services'))
+sys.path.append(os.path.join(os.path.dirname(__file__), "services"))
 
 from services.ses.template_manager import SESTemplateManager
 
@@ -17,10 +17,10 @@ from services.ses.template_manager import SESTemplateManager
 def update_verification_template():
     """Update the verification template with new content"""
     manager = SESTemplateManager()
-    
+
     # Your custom template content
     new_subject = "🍓 Fresa: Verificación de Email"
-    
+
     new_html_content = """
     <!DOCTYPE html>
     <html>
@@ -64,7 +64,7 @@ def update_verification_template():
     </body>
     </html>
     """
-    
+
     new_text_content = """
     Verificación de Email - Fresa
     
@@ -80,30 +80,27 @@ def update_verification_template():
     
     © 2025 Fresa. Todos los derechos reservados.
     """
-    
+
     # Update the template
     success = manager.update_template(
-        "fresa-verificacion-template",
-        new_subject,
-        new_html_content,
-        new_text_content
+        "fresa-verificacion-template", new_subject, new_html_content, new_text_content
     )
-    
+
     if success:
         print("✅ Verification template updated successfully!")
     else:
         print("❌ Failed to update verification template")
-    
+
     return success
 
 
 def update_welcome_template():
     """Update the welcome template with new content"""
     manager = SESTemplateManager()
-    
+
     # Your custom welcome template content
     new_subject = "🍓 ¡Bienvenido a Fresa!"
-    
+
     new_html_content = """
     <!DOCTYPE html>
     <html>
@@ -151,7 +148,7 @@ def update_welcome_template():
     </body>
     </html>
     """
-    
+
     new_text_content = """
     ¡Bienvenido a Fresa!
     
@@ -171,20 +168,17 @@ def update_welcome_template():
     ¡Gracias por elegir Fresa!
     © 2025 Fresa. Todos los derechos reservados.
     """
-    
+
     # Update the template
     success = manager.update_template(
-        "fresa-welcome-template",
-        new_subject,
-        new_html_content,
-        new_text_content
+        "fresa-welcome-template", new_subject, new_html_content, new_text_content
     )
-    
+
     if success:
         print("✅ Welcome template updated successfully!")
     else:
         print("❌ Failed to update welcome template")
-    
+
     return success
 
 
@@ -192,16 +186,16 @@ def main():
     """Main function to update templates"""
     print("🍓 Fresa SES Template Updater")
     print("=" * 40)
-    
+
     if len(sys.argv) < 2:
         print("Usage:")
         print("  python update_ses_template.py verification")
         print("  python update_ses_template.py welcome")
         print("  python update_ses_template.py all")
         sys.exit(1)
-    
+
     command = sys.argv[1]
-    
+
     if command == "verification":
         update_verification_template()
     elif command == "welcome":

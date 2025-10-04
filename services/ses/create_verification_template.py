@@ -10,7 +10,9 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from utils.aws_utils import get_aws_account_info, print_aws_info
 
@@ -19,8 +21,8 @@ def create_ses_template_with_logo(template_name, logo_url):
     """
     Create or update a verification email template with a logo
     """
-    subject = 'Fresa: Tu Código de Verificación: {{verificationCode}}'
-    
+    subject = "Fresa: Tu Código de Verificación: {{verificationCode}}"
+
     html_body = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -110,7 +112,7 @@ def create_ses_template_with_logo(template_name, logo_url):
 </body>
 </html>
 """
-    
+
     text_body = """Tu código de verificación es: {{verificationCode}}
 
 Este código expirará en {{expirationMinutes}} minutos.
@@ -121,15 +123,17 @@ Gracias,
 El Equipo de Fresa
 """
 
-    ses_client = boto3.client('ses', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-    
+    ses_client = boto3.client(
+        "ses", region_name=os.environ.get("AWS_REGION", "us-east-1")
+    )
+
     try:
         response = ses_client.update_template(
             Template={
-                'TemplateName': template_name,
-                'SubjectPart': subject,
-                'HtmlPart': html_body,
-                'TextPart': text_body
+                "TemplateName": template_name,
+                "SubjectPart": subject,
+                "HtmlPart": html_body,
+                "TextPart": text_body,
             }
         )
         print(f"✅ Template actualizado con éxito: {template_name}")
@@ -139,10 +143,10 @@ El Equipo de Fresa
         try:
             response = ses_client.create_template(
                 Template={
-                    'TemplateName': template_name,
-                    'SubjectPart': subject,
-                    'HtmlPart': html_body,
-                    'TextPart': text_body
+                    "TemplateName": template_name,
+                    "SubjectPart": subject,
+                    "HtmlPart": html_body,
+                    "TextPart": text_body,
                 }
             )
             print(f"✅ Template creado con éxito: {template_name}")
@@ -159,24 +163,23 @@ def main():
     """Main function to create verification template"""
     print("🍓 Fresa SES Verification Template Creator")
     print("=" * 50)
-    
+
     # Print AWS info
     print_aws_info()
-    
+
     # Use the EXACT S3 URL format from your original script
-    logo_url = 'https://fresaassets.s3.us-east-1.amazonaws.com/fresaicon.png'
-    
+    logo_url = "https://fresaassets.s3.us-east-1.amazonaws.com/fresaicon.png"
+
     # Create the verification template
     result = create_ses_template_with_logo(
-        template_name='fresa-verificacion-template',
-        logo_url=logo_url
+        template_name="fresa-verificacion-template", logo_url=logo_url
     )
-    
+
     if result:
         print("\n🎉 Verification template created/updated successfully!")
     else:
         print("\n❌ Failed to create/update verification template")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

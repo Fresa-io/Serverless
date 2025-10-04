@@ -21,7 +21,7 @@ class LambdaAliasManager:
         """Initialize the Lambda alias manager"""
         # Setup AWS credentials from environment variables
         setup_aws_environment()
-        
+
         # Use environment variable or default region if none provided
         if region is None:
             region = os.environ.get("AWS_REGION", "us-east-1")

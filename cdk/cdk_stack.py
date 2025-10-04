@@ -46,9 +46,9 @@ class CdkStack(Stack):
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:Query",
-                    "dynamodb:Scan"
+                    "dynamodb:Scan",
                 ],
-                resources=["*"]  # You may want to restrict this to specific table ARNs
+                resources=["*"],  # You may want to restrict this to specific table ARNs
             )
         )
 
@@ -61,9 +61,11 @@ class CdkStack(Stack):
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:RespondToAuthChallenge",
                     "cognito-idp:AdminCreateUser",
-                    "cognito-idp:AdminSetUserPassword"
+                    "cognito-idp:AdminSetUserPassword",
                 ],
-                resources=["*"]  # You may want to restrict this to specific user pool ARNs
+                resources=[
+                    "*"
+                ],  # You may want to restrict this to specific user pool ARNs
             )
         )
 
@@ -109,10 +111,10 @@ class CdkStack(Stack):
             description="Fresa verification function",
             environment={
                 "COGNITO_CLIENT_ID": "your-cognito-client-id",  # Replace with actual client ID
-                "COGNITO_USER_POOL_ID": "your-user-pool-id",    # Replace with actual user pool ID
-                "DYNAMODB_TABLE_NAME": "your-dynamodb-table",   # Replace with actual table name
-                "CODE_EXPIRATION_MINUTES": "5"
-            }
+                "COGNITO_USER_POOL_ID": "your-user-pool-id",  # Replace with actual user pool ID
+                "DYNAMODB_TABLE_NAME": "your-dynamodb-table",  # Replace with actual table name
+                "CODE_EXPIRATION_MINUTES": "5",
+            },
         )
 
         identity_provider_auth_function = _lambda.Function(
@@ -183,7 +185,6 @@ class CdkStack(Stack):
             description="Verify auth challenge function",
         )
 
-
         create_auth_challenge_function = _lambda.Function(
             self,
             "CreateAuthChallengeFunction",
@@ -253,7 +254,6 @@ class CdkStack(Stack):
             value=verify_auth_challenge_function.function_arn,
             description="ARN of the verify auth challenge Lambda function",
         )
-
 
         CfnOutput(
             self,
