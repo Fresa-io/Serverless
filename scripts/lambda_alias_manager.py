@@ -362,7 +362,7 @@ def main():
         return
 
     command = sys.argv[1]
-    
+
     # Only initialize manager for actual commands (not help)
     if command in ["setup", "promote", "rollback", "set-version", "list", "info"]:
         manager = LambdaAliasManager()

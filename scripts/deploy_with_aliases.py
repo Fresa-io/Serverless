@@ -508,7 +508,7 @@ def main():
         return
 
     command = sys.argv[1]
-    
+
     # Only initialize deployer for actual deployment commands
     if command in ["deploy", "deploy-all", "promote", "status", "rollback"]:
         deployer = LambdaDeployer()
