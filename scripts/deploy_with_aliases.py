@@ -31,10 +31,14 @@ class LambdaDeployer:
         # Use environment variable or default region if none provided
         if region is None:
             region = os.environ.get("AWS_REGION", "us-east-1")
-        
+
         # Check if we're in CI/dry-run mode
-        self.ci_mode = os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS") or os.environ.get("DRY_RUN")
-        
+        self.ci_mode = (
+            os.environ.get("CI")
+            or os.environ.get("GITHUB_ACTIONS")
+            or os.environ.get("DRY_RUN")
+        )
+
         if not self.ci_mode:
             self.lambda_client = boto3.client("lambda", region_name=region)
             self.s3_client = boto3.client("s3", region_name=region)
@@ -291,7 +295,7 @@ class LambdaDeployer:
         alias_name = env_config["alias"]
 
         print(f"🚀 Deploying {function_key} to {environment} environment...")
-        
+
         # Check if we're in CI mode
         if self.ci_mode:
             print(f"⚠️  CI/dry-run mode: Would deploy {function_key} to {environment}")

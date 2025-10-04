@@ -25,10 +25,14 @@ class LambdaAliasManager:
         # Use environment variable or default region if none provided
         if region is None:
             region = os.environ.get("AWS_REGION", "us-east-1")
-        
+
         # Check if we're in CI/dry-run mode
-        self.ci_mode = os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS") or os.environ.get("DRY_RUN")
-        
+        self.ci_mode = (
+            os.environ.get("CI")
+            or os.environ.get("GITHUB_ACTIONS")
+            or os.environ.get("DRY_RUN")
+        )
+
         if not self.ci_mode:
             self.lambda_client = boto3.client("lambda", region_name=region)
         else:
@@ -43,7 +47,7 @@ class LambdaAliasManager:
         if self.ci_mode:
             print("⚠️  CI/dry-run mode: Would list Lambda functions")
             return list(self.functions.values())
-        
+
         try:
             response = self.lambda_client.list_functions()
             return [func["FunctionName"] for func in response["Functions"]]
