@@ -98,10 +98,14 @@ def validate_code_in_dynamodb(email, code):
 
 def lambda_handler(event, context):
     try:
+        print(f"🔍 Lambda started - Request ID: {context.aws_request_id}")
+        
         # Parse JSON body safely
         try:
             body = json.loads(event["body"])
+            print(f"📝 Parsed request body: {body}")
         except JSONDecodeError as e:
+            print(f"❌ JSON parse error: {str(e)}")
             return {
                 "statusCode": 400,
                 "body": json.dumps({"error": f"Invalid JSON: {str(e)}"}),
@@ -118,9 +122,12 @@ def lambda_handler(event, context):
             }
 
         # First, check if user exists in Cognito
+        print(f"🔍 Checking if user exists in Cognito: {email}")
         try:
             user_exists_in_cognito = check_user_exists_in_cognito(email)
+            print(f"✅ User exists check result: {user_exists_in_cognito}")
         except ClientError as e:
+            print(f"❌ Error checking user existence: {str(e)}")
             return {
                 "statusCode": 500,
                 "body": json.dumps({"error": "Error checking user existence"}),
@@ -133,7 +140,9 @@ def lambda_handler(event, context):
             }
 
         # User exists in Cognito, now validate the code against DynamoDB
+        print(f"🔍 Validating code in DynamoDB for: {email}")
         code_validation = validate_code_in_dynamodb(email, code)
+        print(f"✅ Code validation result: {code_validation}")
         if not code_validation["valid"]:
             return {
                 "statusCode": code_validation["status_code"],
@@ -141,21 +150,26 @@ def lambda_handler(event, context):
             }
 
         # User exists and code is valid, proceed with custom auth flow
+        print(f"🔍 Starting Cognito custom auth flow for: {email}")
         try:
             cognito = get_cognito_client()
+            print(f"🔍 Initiating auth with client ID: {get_client_id()}")
             auth_response = cognito.initiate_auth(
                 ClientId=get_client_id(),
                 AuthFlow="CUSTOM_AUTH",
                 AuthParameters={"USERNAME": email},
             )
+            print(f"✅ Auth initiated, session: {auth_response.get('Session', 'No session')}")
 
             # Respond to challenge
+            print(f"🔍 Responding to auth challenge with code: {code}")
             challenge_response = cognito.respond_to_auth_challenge(
                 ClientId=get_client_id(),
                 ChallengeName="CUSTOM_CHALLENGE",
                 Session=auth_response["Session"],
                 ChallengeResponses={"USERNAME": email, "ANSWER": code},
             )
+            print(f"✅ Challenge response received")
 
             # Extract all available token information
             auth_result = challenge_response["AuthenticationResult"]
@@ -171,6 +185,7 @@ def lambda_handler(event, context):
             if "RefreshToken" in auth_result:
                 response_data["refresh_token"] = auth_result["RefreshToken"]
 
+            print(f"✅ Authentication successful, returning tokens")
             return {"statusCode": 200, "body": json.dumps(response_data)}
 
         except ClientError as e:
