@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_sqs as sqs,
     aws_events as events,
     aws_events_targets as targets,
+    aws_apigateway as apigateway,
     CfnOutput,
 )
 from constructs import Construct
@@ -33,6 +34,39 @@ class CdkStack(Stack):
                     "service-role/AWSLambdaBasicExecutionRole"
                 )
             ],
+        )
+
+        # Add DynamoDB permissions
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan",
+                ],
+                resources=["*"],  # You may want to restrict this to specific table ARNs
+            )
+        )
+
+        # Add Cognito permissions
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "cognito-idp:AdminGetUser",
+                    "cognito-idp:InitiateAuth",
+                    "cognito-idp:RespondToAuthChallenge",
+                    "cognito-idp:AdminCreateUser",
+                    "cognito-idp:AdminSetUserPassword",
+                ],
+                resources=[
+                    "*"
+                ],  # You may want to restrict this to specific user pool ARNs
+            )
         )
 
         # Create Lambda functions from source code
@@ -75,6 +109,12 @@ class CdkStack(Stack):
             timeout=Duration.seconds(30),
             memory_size=128,
             description="Fresa verification function",
+            environment={
+                "COGNITO_CLIENT_ID": "your-cognito-client-id",  # Replace with actual client ID
+                "COGNITO_USER_POOL_ID": "your-user-pool-id",  # Replace with actual user pool ID
+                "DYNAMODB_TABLE_NAME": "your-dynamodb-table",  # Replace with actual table name
+                "CODE_EXPIRATION_MINUTES": "5",
+            },
         )
 
         identity_provider_auth_function = _lambda.Function(
@@ -143,19 +183,6 @@ class CdkStack(Stack):
             timeout=Duration.seconds(30),
             memory_size=128,
             description="Verify auth challenge function",
-        )
-
-        verift_auth_challenge_function = _lambda.Function(
-            self,
-            "VeriftAuthChallengeFunction",
-            function_name=LAMBDA_FUNCTION_NAMES["veriftAuthChallenge"],
-            runtime=_lambda.Runtime.PYTHON_3_9,
-            handler="veriftAuthChallenge.lambda_handler",
-            code=_lambda.Code.from_asset("Lambdas/Authentication/veriftAuthChallenge"),
-            role=lambda_role,
-            timeout=Duration.seconds(30),
-            memory_size=128,
-            description="Verift auth challenge function",
         )
 
         create_auth_challenge_function = _lambda.Function(
@@ -230,14 +257,10 @@ class CdkStack(Stack):
 
         CfnOutput(
             self,
-            "VeriftAuthChallengeArn",
-            value=verift_auth_challenge_function.function_arn,
-            description="ARN of the verift auth challenge Lambda function",
-        )
-
-        CfnOutput(
-            self,
             "CreateAuthChallengeArn",
             value=create_auth_challenge_function.function_arn,
             description="ARN of the create auth challenge Lambda function",
         )
+
+        # Note: API Gateway is now managed separately via services/apigateway/api_manager.py
+        # This allows for more flexible API Gateway configuration and management

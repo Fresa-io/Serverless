@@ -3,31 +3,76 @@
     "exists": true,
     "arn": "arn:aws:lambda:us-east-1:124355660000:function:recieveEmail",
     "runtime": "python3.13",
-    "handler": "lambda_function.lambda_handler",
+    "handler": "recieveEmail.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-07-20T16:52:48.000+0000",
+    "last_modified": "2025-09-28T16:36:17.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
-    "aliases": []
+    "aliases": [
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:recieveEmail:prod",
+        "Name": "prod",
+        "FunctionVersion": "5",
+        "Description": "Production environment",
+        "RevisionId": "31fcce52-8239-482e-a96b-520e0dd63526"
+      },
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:recieveEmail:staging",
+        "Name": "staging",
+        "FunctionVersion": "7",
+        "Description": "Staging environment for pre-production testing",
+        "RevisionId": "152e4733-6365-4ab8-81af-23d8f95c92ae"
+      }
+    ]
   },
   "signUpCustomer": {
     "exists": true,
     "arn": "arn:aws:lambda:us-east-1:124355660000:function:signUpCustomer",
     "runtime": "python3.13",
-    "handler": "lambda_function.lambda_handler",
+    "handler": "signUpCustomer.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-06-01T22:09:47.000+0000",
+    "last_modified": "2025-09-28T16:35:21.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
-    "aliases": []
+    "aliases": [
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:signUpCustomer:prod",
+        "Name": "prod",
+        "FunctionVersion": "2",
+        "Description": "Production environment",
+        "RevisionId": "9602f267-a2ee-4a67-840b-7795f3f4bbf7"
+      },
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:signUpCustomer:staging",
+        "Name": "staging",
+        "FunctionVersion": "3",
+        "Description": "Staging environment for pre-production testing",
+        "RevisionId": "86332151-a58d-4856-97f9-57bc1d75c3e8"
+      }
+    ]
   },
   "verifyCodeAndAuthHandler": {
     "exists": true,
     "arn": "arn:aws:lambda:us-east-1:124355660000:function:verifyCodeAndAuthHandler",
     "runtime": "python3.13",
-    "handler": "lambda_function.lambda_handler",
+    "handler": "verifyCodeAndAuthHandler.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-07-20T18:17:37.000+0000",
+    "last_modified": "2025-10-04T16:07:44.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
-    "aliases": []
+    "aliases": [
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:verifyCodeAndAuthHandler:prod",
+        "Name": "prod",
+        "FunctionVersion": "2",
+        "Description": "Production environment",
+        "RevisionId": "4238fadc-93d4-47f6-ab24-e259f3c6d1ff"
+      },
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:verifyCodeAndAuthHandler:staging",
+        "Name": "staging",
+        "FunctionVersion": "3",
+        "Description": "Staging environment for pre-production testing",
+        "RevisionId": "98cd5030-b972-4df6-971a-8fe1f39f47e6"
+      }
+    ]
   },
   "identity_provider_auth": {
     "exists": true,
@@ -35,12 +80,49 @@
     "runtime": "python3.13",
     "handler": "lambda_function.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-06-24T23:13:53.000+0000",
+    "last_modified": "2025-09-28T16:19:13.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
-    "aliases": []
+    "aliases": [
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:identity_provider_auth:prod",
+        "Name": "prod",
+        "FunctionVersion": "2",
+        "Description": "Production environment",
+        "RevisionId": "8f40a81f-409d-4607-b28d-e5fc2385fd88"
+      },
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:identity_provider_auth:staging",
+        "Name": "staging",
+        "FunctionVersion": "3",
+        "Description": "Staging environment for pre-production testing",
+        "RevisionId": "017edcd5-a0d4-4bdf-9b88-7aaf46583ff4"
+      }
+    ]
   },
   "testFunction": {
-    "exists": false
+    "exists": true,
+    "arn": "arn:aws:lambda:us-east-1:124355660000:function:testFunction",
+    "runtime": "python3.9",
+    "handler": "testFunction.lambda_handler",
+    "state": "Active",
+    "last_modified": "2025-09-28T16:35:21.000+0000",
+    "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
+    "aliases": [
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:testFunction:prod",
+        "Name": "prod",
+        "FunctionVersion": "2",
+        "Description": "Production environment",
+        "RevisionId": "46b3be7e-5640-4407-895e-5b3d300f547e"
+      },
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:testFunction:staging",
+        "Name": "staging",
+        "FunctionVersion": "4",
+        "Description": "Staging environment for pre-production testing",
+        "RevisionId": "10a8c424-7fee-4b52-ac4e-a9b6c5310e8f"
+      }
+    ]
   },
   "social_auth_user": {
     "exists": true,
@@ -48,9 +130,24 @@
     "runtime": "python3.13",
     "handler": "lambda_function.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-06-24T23:16:05.000+0000",
+    "last_modified": "2025-09-28T16:19:48.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
-    "aliases": []
+    "aliases": [
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:social_auth_user:prod",
+        "Name": "prod",
+        "FunctionVersion": "2",
+        "Description": "Production environment",
+        "RevisionId": "681d2f59-6e20-45b9-80e7-d7c450818898"
+      },
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:social_auth_user:staging",
+        "Name": "staging",
+        "FunctionVersion": "3",
+        "Description": "Staging environment for pre-production testing",
+        "RevisionId": "e14dd674-13ae-4438-bf04-83d16e46fe4e"
+      }
+    ]
   },
   "defineAuthChallenge": {
     "exists": true,
@@ -58,9 +155,24 @@
     "runtime": "python3.13",
     "handler": "lambda_function.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-05-26T03:36:38.000+0000",
+    "last_modified": "2025-09-28T16:19:02.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
-    "aliases": []
+    "aliases": [
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:defineAuthChallenge:prod",
+        "Name": "prod",
+        "FunctionVersion": "2",
+        "Description": "Production environment",
+        "RevisionId": "52cdda1f-d1ee-4c08-86fb-775cf2258c57"
+      },
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:defineAuthChallenge:staging",
+        "Name": "staging",
+        "FunctionVersion": "3",
+        "Description": "Staging environment for pre-production testing",
+        "RevisionId": "5d9dfd68-181e-4ea9-8d90-4750104f419c"
+      }
+    ]
   },
   "verifyAuthChallenge": {
     "exists": true,
@@ -68,12 +180,24 @@
     "runtime": "python3.13",
     "handler": "lambda_function.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-05-30T20:43:14.000+0000",
+    "last_modified": "2025-09-28T16:20:11.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
-    "aliases": []
-  },
-  "veriftAuthChallenge": {
-    "exists": false
+    "aliases": [
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:verifyAuthChallenge:prod",
+        "Name": "prod",
+        "FunctionVersion": "2",
+        "Description": "Production environment",
+        "RevisionId": "30f66aeb-cb81-408b-bf13-d16f46ca5351"
+      },
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:verifyAuthChallenge:staging",
+        "Name": "staging",
+        "FunctionVersion": "3",
+        "Description": "Staging environment for pre-production testing",
+        "RevisionId": "4e51273d-457b-44d9-ab24-d5df7488cf25"
+      }
+    ]
   },
   "createAuthChallenge": {
     "exists": true,
@@ -81,8 +205,23 @@
     "runtime": "python3.13",
     "handler": "lambda_function.lambda_handler",
     "state": "Active",
-    "last_modified": "2025-05-26T23:20:41.000+0000",
+    "last_modified": "2025-09-28T16:18:50.000+0000",
     "role": "arn:aws:iam::124355660000:role/recieveEmailLambda",
-    "aliases": []
+    "aliases": [
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:createAuthChallenge:prod",
+        "Name": "prod",
+        "FunctionVersion": "2",
+        "Description": "Production environment",
+        "RevisionId": "7f1eb389-f19a-466a-8f8a-d36410e6f7ff"
+      },
+      {
+        "AliasArn": "arn:aws:lambda:us-east-1:124355660000:function:createAuthChallenge:staging",
+        "Name": "staging",
+        "FunctionVersion": "3",
+        "Description": "Staging environment for pre-production testing",
+        "RevisionId": "f88342e3-6746-4137-a478-5806b0d83ba9"
+      }
+    ]
   }
 }

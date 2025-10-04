@@ -13,25 +13,41 @@ from typing import Dict, List, Optional
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import LAMBDA_FUNCTION_NAMES, LAMBDA_ALIASES, DEPLOYMENT_ENV
+from utils.config_loader import setup_aws_environment
 
 
 class LambdaAliasManager:
     def __init__(self, region: str = None):
         """Initialize the Lambda alias manager"""
+        # Setup AWS credentials from environment variables
+        setup_aws_environment()
+
         # Use environment variable or default region if none provided
         if region is None:
-            region = (
-                os.environ.get("AWS_REGION")
-                or os.environ.get("CDK_DEFAULT_REGION")
-                or "us-east-1"
-            )
-        self.lambda_client = boto3.client("lambda", region_name=region)
+            region = os.environ.get("AWS_REGION", "us-east-1")
+
+        # Check if we're in CI/dry-run mode
+        self.ci_mode = (
+            os.environ.get("CI")
+            or os.environ.get("GITHUB_ACTIONS")
+            or os.environ.get("DRY_RUN")
+        )
+
+        if not self.ci_mode:
+            self.lambda_client = boto3.client("lambda", region_name=region)
+        else:
+            print("⚠️  Running in CI/dry-run mode - AWS clients not initialized")
+            self.lambda_client = None
         self.functions = LAMBDA_FUNCTION_NAMES
         self.aliases = LAMBDA_ALIASES
         self.environments = DEPLOYMENT_ENV
 
     def list_functions(self) -> List[str]:
         """List all Lambda functions"""
+        if self.ci_mode:
+            print("⚠️  CI/dry-run mode: Would list Lambda functions")
+            return list(self.functions.values())
+
         try:
             response = self.lambda_client.list_functions()
             return [func["FunctionName"] for func in response["Functions"]]

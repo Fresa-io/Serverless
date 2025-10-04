@@ -48,8 +48,17 @@ def get_lambda_execution_role_arn() -> str:
     """
     Get the Lambda execution role ARN for the current account
     """
-    account_info = get_aws_account_info()
-    return f"arn:aws:iam::{account_info['account_id']}:role/lambda_basic_execution"
+    import boto3
+
+    # Try to get a working role from existing Lambda functions
+    try:
+        lambda_client = boto3.client("lambda")
+        response = lambda_client.get_function(FunctionName="recieveEmail")
+        return response["Configuration"]["Role"]
+    except Exception:
+        # Fallback to basic execution role
+        account_info = get_aws_account_info()
+        return f"arn:aws:iam::{account_info['account_id']}:role/lambda_basic_execution"
 
 
 def verify_aws_credentials() -> bool:
