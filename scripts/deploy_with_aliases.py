@@ -31,8 +31,17 @@ class LambdaDeployer:
         # Use environment variable or default region if none provided
         if region is None:
             region = os.environ.get("AWS_REGION", "us-east-1")
-        self.lambda_client = boto3.client("lambda", region_name=region)
-        self.s3_client = boto3.client("s3", region_name=region)
+        
+        # Check if we're in CI/dry-run mode
+        self.ci_mode = os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS") or os.environ.get("DRY_RUN")
+        
+        if not self.ci_mode:
+            self.lambda_client = boto3.client("lambda", region_name=region)
+            self.s3_client = boto3.client("s3", region_name=region)
+        else:
+            print("⚠️  Running in CI/dry-run mode - AWS clients not initialized")
+            self.lambda_client = None
+            self.s3_client = None
         self.functions = LAMBDA_FUNCTION_NAMES
         self.aliases = LAMBDA_ALIASES
         self.environments = DEPLOYMENT_ENV
@@ -282,6 +291,13 @@ class LambdaDeployer:
         alias_name = env_config["alias"]
 
         print(f"🚀 Deploying {function_key} to {environment} environment...")
+        
+        # Check if we're in CI mode
+        if self.ci_mode:
+            print(f"⚠️  CI/dry-run mode: Would deploy {function_key} to {environment}")
+            print(f"   Function: {function_name}")
+            print(f"   Alias: {alias_name}")
+            return True
 
         # Find the function directory
         function_dir = None

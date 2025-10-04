@@ -101,6 +101,12 @@ def setup_aws_environment() -> None:
         print(f"   Region: {credentials.get('AWS_REGION', 'us-east-1')}")
 
     except ValueError as e:
+        # Check if we're in a CI environment or dry-run mode
+        if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS") or os.environ.get("DRY_RUN"):
+            print(f"⚠️  Running in CI/dry-run mode - AWS credentials not required")
+            print(f"   Skipping AWS credential validation")
+            return
+        
         print(f"❌ Configuration error: {e}")
         raise
 
