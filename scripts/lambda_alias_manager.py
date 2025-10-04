@@ -327,7 +327,7 @@ class LambdaAliasManager:
 
 def main():
     """Main function for command line usage"""
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or sys.argv[1] in ["--help", "-h", "help"]:
         print("🚀 Lambda Alias Manager")
         print("")
         print("Usage:")
@@ -362,9 +362,17 @@ def main():
         return
 
     command = sys.argv[1]
-    manager = LambdaAliasManager()
+    
+    # Only initialize manager for actual commands (not help)
+    if command in ["setup", "promote", "rollback", "set-version", "list", "info"]:
+        manager = LambdaAliasManager()
+    else:
+        manager = None
 
     if command == "setup":
+        if not manager:
+            print("❌ Manager not initialized")
+            return
         function_name = sys.argv[2] if len(sys.argv) > 2 else None
         version = sys.argv[3] if len(sys.argv) > 3 else None
 
@@ -374,6 +382,9 @@ def main():
             manager.setup_all_aliases(version)
 
     elif command == "promote":
+        if not manager:
+            print("❌ Manager not initialized")
+            return
         if len(sys.argv) != 5:
             print(
                 "❌ promote command requires: function_name source_alias target_alias"
@@ -387,9 +398,15 @@ def main():
         manager.promote_alias(function_name, source_alias, target_alias)
 
     elif command == "list":
+        if not manager:
+            print("❌ Manager not initialized")
+            return
         manager.list_all_aliases()
 
     elif command == "info":
+        if not manager:
+            print("❌ Manager not initialized")
+            return
         if len(sys.argv) != 4:
             print("❌ info command requires: function_name alias_name")
             return
@@ -402,6 +419,9 @@ def main():
             print(json.dumps(info, indent=2, default=str))
 
     elif command == "rollback":
+        if not manager:
+            print("❌ Manager not initialized")
+            return
         if len(sys.argv) != 4:
             print("❌ rollback command requires: function_name environment")
             return
@@ -421,6 +441,9 @@ def main():
         manager.rollback_to_previous_version(function_name, alias_name)
 
     elif command == "set-version":
+        if not manager:
+            print("❌ Manager not initialized")
+            return
         if len(sys.argv) != 5:
             print("❌ set-version command requires: function_name environment version")
             return
