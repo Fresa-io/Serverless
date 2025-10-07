@@ -98,21 +98,19 @@ class TestVerifyCodeAndAuthHandler(unittest.TestCase):
 
         self.assertFalse(result)
 
-    @patch("verifyCodeAndAuthHandler.get_dynamodb_resource")
+    @patch("verifyCodeAndAuthHandler.get_dynamodb_client")
     def test_validate_code_success(self, mock_get_dynamodb):
         """Test successful code validation"""
         import time
 
         mock_dynamodb = Mock()
         mock_get_dynamodb.return_value = mock_dynamodb
-        mock_table = Mock()
-        mock_dynamodb.Table.return_value = mock_table
 
         current_time = int(time.time())
-        mock_table.get_item.return_value = {
+        mock_dynamodb.get_item.return_value = {
             "Item": {
-                "code": "123456",
-                "lastRequestTime": current_time - 60,  # 1 minute ago
+                "code": {"S": "123456"},
+                "lastRequestTime": {"N": str(current_time - 60)},  # 1 minute ago
             }
         }
 
@@ -120,21 +118,19 @@ class TestVerifyCodeAndAuthHandler(unittest.TestCase):
 
         self.assertTrue(result["valid"])
 
-    @patch("verifyCodeAndAuthHandler.get_dynamodb_resource")
+    @patch("verifyCodeAndAuthHandler.get_dynamodb_client")
     def test_validate_code_expired(self, mock_get_dynamodb):
         """Test expired code validation"""
         import time
 
         mock_dynamodb = Mock()
         mock_get_dynamodb.return_value = mock_dynamodb
-        mock_table = Mock()
-        mock_dynamodb.Table.return_value = mock_table
 
         current_time = int(time.time())
-        mock_table.get_item.return_value = {
+        mock_dynamodb.get_item.return_value = {
             "Item": {
-                "code": "123456",
-                "lastRequestTime": current_time - 400,  # 6+ minutes ago (expired)
+                "code": {"S": "123456"},
+                "lastRequestTime": {"N": str(current_time - 400)},  # 6+ minutes ago (expired)
             }
         }
 
@@ -144,21 +140,19 @@ class TestVerifyCodeAndAuthHandler(unittest.TestCase):
         self.assertEqual(result["error"], "Verification code has expired")
         self.assertEqual(result["status_code"], 401)
 
-    @patch("verifyCodeAndAuthHandler.get_dynamodb_resource")
+    @patch("verifyCodeAndAuthHandler.get_dynamodb_client")
     def test_validate_code_wrong_code(self, mock_get_dynamodb):
         """Test wrong code validation"""
         import time
 
         mock_dynamodb = Mock()
         mock_get_dynamodb.return_value = mock_dynamodb
-        mock_table = Mock()
-        mock_dynamodb.Table.return_value = mock_table
 
         current_time = int(time.time())
-        mock_table.get_item.return_value = {
+        mock_dynamodb.get_item.return_value = {
             "Item": {
-                "code": "654321",  # Different code
-                "lastRequestTime": current_time - 60,
+                "code": {"S": "654321"},  # Different code
+                "lastRequestTime": {"N": str(current_time - 60)},
             }
         }
 
