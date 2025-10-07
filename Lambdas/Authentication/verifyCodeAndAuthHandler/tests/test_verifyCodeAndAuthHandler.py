@@ -130,7 +130,9 @@ class TestVerifyCodeAndAuthHandler(unittest.TestCase):
         mock_dynamodb.get_item.return_value = {
             "Item": {
                 "code": {"S": "123456"},
-                "lastRequestTime": {"N": str(current_time - 400)},  # 6+ minutes ago (expired)
+                "lastRequestTime": {
+                    "N": str(current_time - 400)
+                },  # 6+ minutes ago (expired)
             }
         }
 
