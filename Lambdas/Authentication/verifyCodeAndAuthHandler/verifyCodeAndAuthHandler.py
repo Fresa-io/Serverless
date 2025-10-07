@@ -26,10 +26,11 @@ def get_dynamodb_client():
         region = os.environ.get("AWS_REGION", "us-east-1")
         print(f"🔍 Creating DynamoDB client in region: {region}")
         from botocore.config import Config
+
         config = Config(
-            retries={'max_attempts': 3, 'mode': 'adaptive'},
+            retries={"max_attempts": 3, "mode": "adaptive"},
             connect_timeout=5,
-            read_timeout=5
+            read_timeout=5,
         )
         _dynamodb = boto3.client("dynamodb", region_name=region, config=config)
     return _dynamodb
@@ -74,12 +75,9 @@ def validate_code_in_dynamodb(email, code):
         table_name = get_dynamodb_table_name()
         print(f"🔍 Accessing table: {table_name}")
         print(f"🔍 Querying DynamoDB for email: {email}")
-        
+
         # Use client.get_item with explicit timeout
-        response = dynamodb.get_item(
-            TableName=table_name,
-            Key={"email": {"S": email}}
-        )
+        response = dynamodb.get_item(TableName=table_name, Key={"email": {"S": email}})
         print(f"✅ DynamoDB response received: {response}")
 
         # Check if code record doesn't exist (deleted or never created)
@@ -92,7 +90,9 @@ def validate_code_in_dynamodb(email, code):
 
         item = response["Item"]
         stored_code = item.get("code", {}).get("S")  # DynamoDB client format
-        last_request_time = item.get("lastRequestTime", {}).get("N")  # Unix timestamp as string
+        last_request_time = item.get("lastRequestTime", {}).get(
+            "N"
+        )  # Unix timestamp as string
         if last_request_time:
             last_request_time = int(last_request_time)
 
@@ -125,7 +125,7 @@ def validate_code_in_dynamodb(email, code):
 def lambda_handler(event, context):
     try:
         print(f"🔍 Lambda started - Request ID: {context.aws_request_id}")
-        
+
         # Parse JSON body safely
         try:
             body = json.loads(event["body"])
@@ -185,7 +185,9 @@ def lambda_handler(event, context):
                 AuthFlow="CUSTOM_AUTH",
                 AuthParameters={"USERNAME": email},
             )
-            print(f"✅ Auth initiated, session: {auth_response.get('Session', 'No session')}")
+            print(
+                f"✅ Auth initiated, session: {auth_response.get('Session', 'No session')}"
+            )
 
             # Respond to challenge
             print(f"🔍 Responding to auth challenge with code: {code}")

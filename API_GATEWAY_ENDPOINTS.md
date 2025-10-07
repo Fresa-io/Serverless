@@ -188,3 +188,4 @@ curl -X POST https://5cxyrbm6pk.execute-api.us-east-1.amazonaws.com/prod/signup-
 | Customer Signup  | `/staging/signup-customer` | `/prod/signup-customer` |
 
 **Base URL**: `https://5cxyrbm6pk.execute-api.us-east-1.amazonaws.com`
+
