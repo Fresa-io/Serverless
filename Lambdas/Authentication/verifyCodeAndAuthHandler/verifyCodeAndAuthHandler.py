@@ -2,6 +2,7 @@ import boto3
 import json
 import os
 import time
+import signal
 from json import JSONDecodeError
 from botocore.exceptions import ClientError
 
@@ -17,10 +18,21 @@ def get_cognito_client():
     return _cognito
 
 
-def get_dynamodb_resource():
+def get_dynamodb_client():
+    """Get DynamoDB client with retry configuration"""
     global _dynamodb
     if _dynamodb is None:
-        _dynamodb = boto3.resource("dynamodb")
+        # Use client instead of resource for better control
+        region = os.environ.get("AWS_REGION", "us-east-1")
+        print(f"🔍 Creating DynamoDB client in region: {region}")
+        from botocore.config import Config
+
+        config = Config(
+            retries={"max_attempts": 3, "mode": "adaptive"},
+            connect_timeout=5,
+            read_timeout=5,
+        )
+        _dynamodb = boto3.client("dynamodb", region_name=region, config=config)
     return _dynamodb
 
 
@@ -58,9 +70,15 @@ def check_user_exists_in_cognito(email):
 def validate_code_in_dynamodb(email, code):
     """Validate the code against DynamoDB and return validation result"""
     try:
-        dynamodb = get_dynamodb_resource()
-        table = dynamodb.Table(get_dynamodb_table_name())
-        response = table.get_item(Key={"email": email})
+        print(f"🔍 Getting DynamoDB client...")
+        dynamodb = get_dynamodb_client()
+        table_name = get_dynamodb_table_name()
+        print(f"🔍 Accessing table: {table_name}")
+        print(f"🔍 Querying DynamoDB for email: {email}")
+
+        # Use client.get_item with explicit timeout
+        response = dynamodb.get_item(TableName=table_name, Key={"email": {"S": email}})
+        print(f"✅ DynamoDB response received: {response}")
 
         # Check if code record doesn't exist (deleted or never created)
         if "Item" not in response:
@@ -71,8 +89,12 @@ def validate_code_in_dynamodb(email, code):
             }
 
         item = response["Item"]
-        stored_code = item.get("code")
-        last_request_time = item.get("lastRequestTime")  # Unix timestamp
+        stored_code = item.get("code", {}).get("S")  # DynamoDB client format
+        last_request_time = item.get("lastRequestTime", {}).get(
+            "N"
+        )  # Unix timestamp as string
+        if last_request_time:
+            last_request_time = int(last_request_time)
 
         # Check if code has expired based on time
         if last_request_time:
@@ -93,15 +115,23 @@ def validate_code_in_dynamodb(email, code):
         return {"valid": True}
 
     except ClientError as dynamodb_error:
+        print(f"❌ DynamoDB ClientError: {str(dynamodb_error)}")
+        return {"valid": False, "error": "Database error occurred", "status_code": 500}
+    except Exception as e:
+        print(f"❌ Unexpected error in DynamoDB validation: {str(e)}")
         return {"valid": False, "error": "Database error occurred", "status_code": 500}
 
 
 def lambda_handler(event, context):
     try:
+        print(f"🔍 Lambda started - Request ID: {context.aws_request_id}")
+
         # Parse JSON body safely
         try:
             body = json.loads(event["body"])
+            print(f"📝 Parsed request body: {body}")
         except JSONDecodeError as e:
+            print(f"❌ JSON parse error: {str(e)}")
             return {
                 "statusCode": 400,
                 "body": json.dumps({"error": f"Invalid JSON: {str(e)}"}),
@@ -118,9 +148,12 @@ def lambda_handler(event, context):
             }
 
         # First, check if user exists in Cognito
+        print(f"🔍 Checking if user exists in Cognito: {email}")
         try:
             user_exists_in_cognito = check_user_exists_in_cognito(email)
+            print(f"✅ User exists check result: {user_exists_in_cognito}")
         except ClientError as e:
+            print(f"❌ Error checking user existence: {str(e)}")
             return {
                 "statusCode": 500,
                 "body": json.dumps({"error": "Error checking user existence"}),
@@ -133,7 +166,9 @@ def lambda_handler(event, context):
             }
 
         # User exists in Cognito, now validate the code against DynamoDB
+        print(f"🔍 Validating code in DynamoDB for: {email}")
         code_validation = validate_code_in_dynamodb(email, code)
+        print(f"✅ Code validation result: {code_validation}")
         if not code_validation["valid"]:
             return {
                 "statusCode": code_validation["status_code"],
@@ -141,21 +176,28 @@ def lambda_handler(event, context):
             }
 
         # User exists and code is valid, proceed with custom auth flow
+        print(f"🔍 Starting Cognito custom auth flow for: {email}")
         try:
             cognito = get_cognito_client()
+            print(f"🔍 Initiating auth with client ID: {get_client_id()}")
             auth_response = cognito.initiate_auth(
                 ClientId=get_client_id(),
                 AuthFlow="CUSTOM_AUTH",
                 AuthParameters={"USERNAME": email},
             )
+            print(
+                f"✅ Auth initiated, session: {auth_response.get('Session', 'No session')}"
+            )
 
             # Respond to challenge
+            print(f"🔍 Responding to auth challenge with code: {code}")
             challenge_response = cognito.respond_to_auth_challenge(
                 ClientId=get_client_id(),
                 ChallengeName="CUSTOM_CHALLENGE",
                 Session=auth_response["Session"],
                 ChallengeResponses={"USERNAME": email, "ANSWER": code},
             )
+            print(f"✅ Challenge response received")
 
             # Extract all available token information
             auth_result = challenge_response["AuthenticationResult"]
@@ -171,6 +213,7 @@ def lambda_handler(event, context):
             if "RefreshToken" in auth_result:
                 response_data["refresh_token"] = auth_result["RefreshToken"]
 
+            print(f"✅ Authentication successful, returning tokens")
             return {"statusCode": 200, "body": json.dumps(response_data)}
 
         except ClientError as e:

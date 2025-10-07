@@ -106,13 +106,13 @@ class CdkStack(Stack):
                 "Lambdas/Authentication/verifyCodeAndAuthHandler"
             ),
             role=lambda_role,
-            timeout=Duration.seconds(30),
-            memory_size=128,
+            timeout=Duration.seconds(60),  # Increased from 30s to 60s
+            memory_size=256,  # Increased from 128MB to 256MB for better performance
             description="Fresa verification function",
             environment={
-                "COGNITO_CLIENT_ID": "your-cognito-client-id",  # Replace with actual client ID
-                "COGNITO_USER_POOL_ID": "your-user-pool-id",  # Replace with actual user pool ID
-                "DYNAMODB_TABLE_NAME": "your-dynamodb-table",  # Replace with actual table name
+                "COGNITO_CLIENT_ID": "5st6t5kci95r53btoro9du83f3",
+                "COGNITO_USER_POOL_ID": "us-east-1_aSNl9TDUl",
+                "DYNAMODB_TABLE_NAME": "VerificationCodes",
                 "CODE_EXPIRATION_MINUTES": "5",
             },
         )
