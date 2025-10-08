@@ -29,8 +29,8 @@ def get_dynamodb_client():
 
         config = Config(
             retries={"max_attempts": 3, "mode": "adaptive"},
-            connect_timeout=5,
-            read_timeout=5,
+            connect_timeout=10,
+            read_timeout=10,
         )
         _dynamodb = boto3.client("dynamodb", region_name=region, config=config)
     return _dynamodb
@@ -76,9 +76,13 @@ def validate_code_in_dynamodb(email, code):
         print(f"🔍 Accessing table: {table_name}")
         print(f"🔍 Querying DynamoDB for email: {email}")
 
-        # Use client.get_item with explicit timeout
-        response = dynamodb.get_item(TableName=table_name, Key={"email": {"S": email}})
-        print(f"✅ DynamoDB response received: {response}")
+        # Use client.get_item with explicit timeout and error handling
+        try:
+            response = dynamodb.get_item(TableName=table_name, Key={"email": {"S": email}})
+            print(f"✅ DynamoDB response received: {response}")
+        except Exception as dynamodb_error:
+            print(f"❌ DynamoDB query error: {str(dynamodb_error)}")
+            return {"valid": False, "error": "Database connection error", "status_code": 500}
 
         # Check if code record doesn't exist (deleted or never created)
         if "Item" not in response:
@@ -125,6 +129,15 @@ def validate_code_in_dynamodb(email, code):
 def lambda_handler(event, context):
     try:
         print(f"🔍 Lambda started - Request ID: {context.aws_request_id}")
+        
+        # Set up timeout handler
+        def timeout_handler(signum, frame):
+            print(f"⏰ Lambda timeout - Request ID: {context.aws_request_id}")
+            raise TimeoutError("Lambda function timeout")
+        
+        # Set timeout to 25 seconds (less than Lambda timeout)
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(25)
 
         # Parse JSON body safely
         try:
@@ -132,6 +145,7 @@ def lambda_handler(event, context):
             print(f"📝 Parsed request body: {body}")
         except JSONDecodeError as e:
             print(f"❌ JSON parse error: {str(e)}")
+            signal.alarm(0)  # Cancel timeout
             return {
                 "statusCode": 400,
                 "body": json.dumps({"error": f"Invalid JSON: {str(e)}"}),
@@ -142,6 +156,7 @@ def lambda_handler(event, context):
 
         # Validate required fields
         if not email or not code:
+            signal.alarm(0)  # Cancel timeout
             return {
                 "statusCode": 400,
                 "body": json.dumps({"error": "Missing email or code"}),
@@ -154,12 +169,14 @@ def lambda_handler(event, context):
             print(f"✅ User exists check result: {user_exists_in_cognito}")
         except ClientError as e:
             print(f"❌ Error checking user existence: {str(e)}")
+            signal.alarm(0)  # Cancel timeout
             return {
                 "statusCode": 500,
                 "body": json.dumps({"error": "Error checking user existence"}),
             }
 
         if not user_exists_in_cognito:
+            signal.alarm(0)  # Cancel timeout
             return {
                 "statusCode": 404,
                 "body": json.dumps({"error": "User does not exist"}),
@@ -170,6 +187,7 @@ def lambda_handler(event, context):
         code_validation = validate_code_in_dynamodb(email, code)
         print(f"✅ Code validation result: {code_validation}")
         if not code_validation["valid"]:
+            signal.alarm(0)  # Cancel timeout
             return {
                 "statusCode": code_validation["status_code"],
                 "body": json.dumps({"error": code_validation["error"]}),
@@ -214,6 +232,7 @@ def lambda_handler(event, context):
                 response_data["refresh_token"] = auth_result["RefreshToken"]
 
             print(f"✅ Authentication successful, returning tokens")
+            signal.alarm(0)  # Cancel timeout
             return {"statusCode": 200, "body": json.dumps(response_data)}
 
         except ClientError as e:
@@ -221,6 +240,7 @@ def lambda_handler(event, context):
 
             # Handle various Cognito-specific exceptions
             if error_code == "NotAuthorizedException":
+                signal.alarm(0)  # Cancel timeout
                 return {
                     "statusCode": 401,
                     "body": json.dumps(
@@ -228,16 +248,19 @@ def lambda_handler(event, context):
                     ),
                 }
             elif error_code == "CodeMismatchException":
+                signal.alarm(0)  # Cancel timeout
                 return {
                     "statusCode": 401,
                     "body": json.dumps({"error": "Invalid verification code"}),
                 }
             elif error_code == "ExpiredCodeException":
+                signal.alarm(0)  # Cancel timeout
                 return {
                     "statusCode": 401,
                     "body": json.dumps({"error": "Verification code has expired"}),
                 }
             elif error_code == "InvalidLambdaResponseException":
+                signal.alarm(0)  # Cancel timeout
                 return {
                     "statusCode": 500,
                     "body": json.dumps(
@@ -245,13 +268,22 @@ def lambda_handler(event, context):
                     ),
                 }
             else:
+                signal.alarm(0)  # Cancel timeout
                 return {
                     "statusCode": 401,
                     "body": json.dumps({"error": f"Authentication failed: {str(e)}"}),
                 }
 
+    except TimeoutError as e:
+        # Handle timeout specifically
+        print(f"⏰ Lambda timeout error: {str(e)}")
+        return {
+            "statusCode": 504,
+            "body": json.dumps({"error": "Request timeout - please try again"}),
+        }
     except Exception as e:
         # Fallback for all other exceptions
+        signal.alarm(0)  # Cancel timeout
         return {
             "statusCode": 500,
             "body": json.dumps({"error": f"Internal server error: {str(e)}"}),
