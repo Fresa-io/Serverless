@@ -226,6 +226,25 @@ def send_verification_email(email, code):
         raise
 
 
+def check_user_exists_in_cognito(email):
+    """Check if user exists in Cognito User Pool"""
+    try:
+        cognito = boto3.client("cognito-idp")
+        user_pool_id = os.environ.get("COGNITO_USER_POOL_ID")
+        
+        if not user_pool_id:
+            print("❌ COGNITO_USER_POOL_ID not set")
+            return False
+            
+        cognito.admin_get_user(UserPoolId=user_pool_id, Username=email)
+        return True
+    except cognito.exceptions.UserNotFoundException:
+        return False
+    except Exception as e:
+        print(f"❌ Error checking user existence: {str(e)}")
+        return False
+
+
 def determine_if_post_burst_code(email):
     """Determine if this code is being sent after the burst period"""
     current_time = int(datetime.now(timezone.utc).timestamp())
@@ -287,6 +306,18 @@ def lambda_handler(event, context):
         # Convert email to lowercase for consistent processing
         email = email.lower().strip()
 
+        # Check if user exists in Cognito
+        if not check_user_exists_in_cognito(email):
+            return {
+                "statusCode": 404,
+                "body": json.dumps(
+                    {
+                        "success": False, 
+                        "message": "Email address not found. Please check your email address or sign up first."
+                    }
+                ),
+            }
+
         rate_limit_response = handle_rate_limiting(email)
         if rate_limit_response:
             return rate_limit_response
@@ -306,12 +337,46 @@ def lambda_handler(event, context):
         }
     except Exception as e:
         print(f"Critical Error: {str(e)}")
-        return {
-            "statusCode": 500,
-            "body": json.dumps(
-                {
-                    "success": False,
-                    "message": "Internal server error. Please try again later.",
-                }
-            ),
-        }
+        
+        # Check if it's a specific error we can handle
+        error_message = str(e).lower()
+        if "user not found" in error_message or "does not exist" in error_message:
+            return {
+                "statusCode": 404,
+                "body": json.dumps(
+                    {
+                        "success": False,
+                        "message": "Email address not found. Please check your email address or sign up first."
+                    }
+                ),
+            }
+        elif "rate limit" in error_message or "throttl" in error_message:
+            return {
+                "statusCode": 429,
+                "body": json.dumps(
+                    {
+                        "success": False,
+                        "message": "Too many requests. Please wait before requesting another code."
+                    }
+                ),
+            }
+        elif "ses" in error_message or "email" in error_message:
+            return {
+                "statusCode": 500,
+                "body": json.dumps(
+                    {
+                        "success": False,
+                        "message": "Unable to send email. Please try again later."
+                    }
+                ),
+            }
+        else:
+            return {
+                "statusCode": 500,
+                "body": json.dumps(
+                    {
+                        "success": False,
+                        "message": "Internal server error. Please try again later.",
+                    }
+                ),
+            }

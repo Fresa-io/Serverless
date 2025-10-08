@@ -115,9 +115,8 @@ def lambda_handler(event, context):
 
         if not challenge_answer or not email:
             print("❌ Missing challenge answer or email")
-            return {
-                "answerCorrect": False
-            }
+            event["response"]["answerCorrect"] = False
+            return event
 
         print(f"🔍 Verifying challenge for email: {email}")
         print(f"🔍 Challenge answer: {challenge_answer}")
@@ -128,26 +127,17 @@ def lambda_handler(event, context):
 
         if not code_validation["valid"]:
             print(f"❌ Code validation failed: {code_validation['error']}")
-            return {
-                "answerCorrect": False
-            }
+            event["response"]["answerCorrect"] = False
+            return event
 
         print(f"✅ Challenge verification successful for: {email}")
-        # Ensure the response is exactly what Cognito expects
-        response = {
-            "answerCorrect": True
-        }
-        print(f"🔍 Returning response: {response}")
-        print(f"🔍 Response type: {type(response)}")
-        print(f"🔍 Response keys: {list(response.keys())}")
-        print(f"🔍 Response answerCorrect value: {response['answerCorrect']}")
-        print(f"🔍 Response answerCorrect type: {type(response['answerCorrect'])}")
-        return response
+        # Set the response in the event object
+        event["response"]["answerCorrect"] = True
+        print(f"🔍 Returning event with answerCorrect: {event['response']['answerCorrect']}")
+        return event
 
     except Exception as e:
         print(f"❌ Error in verifyAuthChallenge: {str(e)}")
-        response = {
-            "answerCorrect": False
-        }
-        print(f"🔍 Returning error response: {response}")
-        return response
+        event["response"]["answerCorrect"] = False
+        print(f"🔍 Returning error event with answerCorrect: False")
+        return event
