@@ -209,13 +209,21 @@ def lambda_handler(event, context):
 
             # Respond to challenge
             print(f"🔍 Responding to auth challenge with code: {code}")
-            challenge_response = cognito.respond_to_auth_challenge(
-                ClientId=get_client_id(),
-                ChallengeName="CUSTOM_CHALLENGE",
-                Session=auth_response["Session"],
-                ChallengeResponses={"USERNAME": email, "ANSWER": code},
-            )
-            print(f"✅ Challenge response received")
+            try:
+                challenge_response = cognito.respond_to_auth_challenge(
+                    ClientId=get_client_id(),
+                    ChallengeName="CUSTOM_CHALLENGE",
+                    Session=auth_response["Session"],
+                    ChallengeResponses={"USERNAME": email, "ANSWER": code},
+                )
+                print(f"✅ Challenge response received: {challenge_response}")
+            except Exception as challenge_error:
+                print(f"❌ Challenge response error: {str(challenge_error)}")
+                signal.alarm(0)  # Cancel timeout
+                return {
+                    "statusCode": 500,
+                    "body": json.dumps({"error": f"Challenge response failed: {str(challenge_error)}"}),
+                }
 
             # Extract all available token information
             auth_result = challenge_response["AuthenticationResult"]

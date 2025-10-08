@@ -18,11 +18,11 @@ def get_cognito_client():
     return _cognito
 
 
-def get_dynamodb_resource():
-    """Get DynamoDB resource with lazy initialization"""
+def get_dynamodb_client():
+    """Get DynamoDB client with lazy initialization"""
     global _dynamodb
     if _dynamodb is None:
-        _dynamodb = boto3.resource("dynamodb")
+        _dynamodb = boto3.client("dynamodb")
     return _dynamodb
 
 
@@ -60,9 +60,9 @@ def check_user_exists_in_cognito(email):
 def validate_code_in_dynamodb(email, code):
     """Validate the code against DynamoDB and return validation result"""
     try:
-        dynamodb = get_dynamodb_resource()
-        table = dynamodb.Table(get_dynamodb_table_name())
-        response = table.get_item(Key={"email": email})
+        dynamodb = get_dynamodb_client()
+        table_name = get_dynamodb_table_name()
+        response = dynamodb.get_item(TableName=table_name, Key={"email": {"S": email}})
 
         # Check if code record doesn't exist (deleted or never created)
         if "Item" not in response:
@@ -73,8 +73,10 @@ def validate_code_in_dynamodb(email, code):
             }
 
         item = response["Item"]
-        stored_code = item.get("code")
-        last_request_time = item.get("lastRequestTime")  # Unix timestamp
+        stored_code = item.get("code", {}).get("S")  # DynamoDB client format
+        last_request_time = item.get("lastRequestTime", {}).get("N")  # Unix timestamp as string
+        if last_request_time:
+            last_request_time = int(last_request_time)
 
         # Check if code has expired based on time
         if last_request_time:
@@ -99,119 +101,53 @@ def validate_code_in_dynamodb(email, code):
 
 
 def lambda_handler(event, context):
+    """
+    Lambda handler for Cognito custom auth challenge verification
+    """
     try:
-        # Parse JSON body safely
-        try:
-            body = json.loads(event["body"])
-        except JSONDecodeError as e:
+        print(f"🔍 verifyAuthChallenge started - Request ID: {context.aws_request_id}")
+        print(f"📝 Event received: {json.dumps(event)}")
+
+        # Extract challenge answer from the event
+        challenge_answer = event.get("request", {}).get("challengeAnswer", "")
+        user_attributes = event.get("request", {}).get("userAttributes", {})
+        email = user_attributes.get("email", "")
+
+        if not challenge_answer or not email:
+            print("❌ Missing challenge answer or email")
             return {
-                "statusCode": 400,
-                "body": json.dumps({"error": f"Invalid JSON: {str(e)}"}),
+                "answerCorrect": False
             }
 
-        email = body.get("email", "").lower().strip()
-        code = body.get("code", "")
+        print(f"🔍 Verifying challenge for email: {email}")
+        print(f"🔍 Challenge answer: {challenge_answer}")
 
-        # Validate required fields
-        if not email or not code:
-            return {
-                "statusCode": 400,
-                "body": json.dumps({"error": "Missing email or code"}),
-            }
+        # Validate the code against DynamoDB
+        code_validation = validate_code_in_dynamodb(email, challenge_answer)
+        print(f"✅ Code validation result: {code_validation}")
 
-        # First, check if user exists in Cognito
-        try:
-            user_exists_in_cognito = check_user_exists_in_cognito(email)
-        except ClientError as e:
-            return {
-                "statusCode": 500,
-                "body": json.dumps({"error": "Error checking user existence"}),
-            }
-
-        if not user_exists_in_cognito:
-            return {
-                "statusCode": 404,
-                "body": json.dumps({"error": "User does not exist"}),
-            }
-
-        # User exists in Cognito, now validate the code against DynamoDB
-        code_validation = validate_code_in_dynamodb(email, code)
         if not code_validation["valid"]:
+            print(f"❌ Code validation failed: {code_validation['error']}")
             return {
-                "statusCode": code_validation["status_code"],
-                "body": json.dumps({"error": code_validation["error"]}),
+                "answerCorrect": False
             }
 
-        # User exists and code is valid, proceed with custom auth flow
-        try:
-            cognito = get_cognito_client()
-            auth_response = cognito.initiate_auth(
-                ClientId=get_client_id(),
-                AuthFlow="CUSTOM_AUTH",
-                AuthParameters={"USERNAME": email},
-            )
-
-            # Respond to challenge
-            challenge_response = cognito.respond_to_auth_challenge(
-                ClientId=get_client_id(),
-                ChallengeName="CUSTOM_CHALLENGE",
-                Session=auth_response["Session"],
-                ChallengeResponses={"USERNAME": email, "ANSWER": code},
-            )
-
-            # Extract all available token information
-            auth_result = challenge_response["AuthenticationResult"]
-
-            response_data = {
-                "access_token": auth_result["AccessToken"],
-                "id_token": auth_result["IdToken"],
-                "token_type": auth_result.get("TokenType", "Bearer"),
-                "expires_in": auth_result.get("ExpiresIn"),
-            }
-
-            # Add refresh token if available (may not be present in custom auth flow)
-            if "RefreshToken" in auth_result:
-                response_data["refresh_token"] = auth_result["RefreshToken"]
-
-            return {"statusCode": 200, "body": json.dumps(response_data)}
-
-        except ClientError as e:
-            error_code = e.response["Error"].get("Code")
-
-            # Handle various Cognito-specific exceptions
-            if error_code == "NotAuthorizedException":
-                return {
-                    "statusCode": 401,
-                    "body": json.dumps(
-                        {"error": "Invalid code or authentication failed"}
-                    ),
-                }
-            elif error_code == "CodeMismatchException":
-                return {
-                    "statusCode": 401,
-                    "body": json.dumps({"error": "Invalid verification code"}),
-                }
-            elif error_code == "ExpiredCodeException":
-                return {
-                    "statusCode": 401,
-                    "body": json.dumps({"error": "Verification code has expired"}),
-                }
-            elif error_code == "InvalidLambdaResponseException":
-                return {
-                    "statusCode": 500,
-                    "body": json.dumps(
-                        {"error": "Authentication service configuration error"}
-                    ),
-                }
-            else:
-                return {
-                    "statusCode": 401,
-                    "body": json.dumps({"error": f"Authentication failed: {str(e)}"}),
-                }
+        print(f"✅ Challenge verification successful for: {email}")
+        # Ensure the response is exactly what Cognito expects
+        response = {
+            "answerCorrect": True
+        }
+        print(f"🔍 Returning response: {response}")
+        print(f"🔍 Response type: {type(response)}")
+        print(f"🔍 Response keys: {list(response.keys())}")
+        print(f"🔍 Response answerCorrect value: {response['answerCorrect']}")
+        print(f"🔍 Response answerCorrect type: {type(response['answerCorrect'])}")
+        return response
 
     except Exception as e:
-        # Fallback for all other exceptions
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": f"Internal server error: {str(e)}"}),
+        print(f"❌ Error in verifyAuthChallenge: {str(e)}")
+        response = {
+            "answerCorrect": False
         }
+        print(f"🔍 Returning error response: {response}")
+        return response
